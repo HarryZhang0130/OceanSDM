@@ -1,0 +1,35 @@
+---
+title: "Introduction to Thermal.thresholds"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{myutils}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(Thermal.thresholds)
+```
+# Introduction
+
+This is a package used to estimate preferred and tolerable ocean temperature by pelagic fish species such as whale sharks.
+
+# load the data
+
+To use the whale shark data, execute:
+```{r}
+data(ws)
+```
+
+# run the fit_temp()
+You can run this function with the whale shark data:
+```{r}
+fit_temp(ws,30)
+```
