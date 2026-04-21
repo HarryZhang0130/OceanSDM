@@ -1,8 +1,13 @@
 ---
-title: "Introduction to Thermal.thresholds"
-output: rmarkdown::html_vignette
+title: "Introduction to OceanSDM"
+date: 2026-04-13
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    css: vignette.css
 vignette: >
-  %\VignetteIndexEntry{myutils}
+  %\VignetteIndexEntry{Introduction to OceanSDM}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,23 +18,1045 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+Predicting the dynamic, three-dimensional distributions of marine species is challenging given most SDM tools currently can only predict static 2D habitats (but see an example of voluModel package,Owens & Rahbek, 2023). Here, we present a novel package 'OceanSDM' to fill this gap. This package includes 18 user-friendly functions helping researchers to complete tasks from initial data extraction to final publication-quality figure creation. It can be split into three major sections: (1) Prepare species and environmental data, (2) Build 2D SDMs for each temporal bin and generate related figures, and (3) Estimate suitable/preferred depth and map the 3D habitat for each temporal bin. Here I illustrate the utility of this package with a pelagic shark (whale shark). For the temporal bin, I used quarterly bins (four bins).
 
+Here are the packages you need.
 ```{r setup}
-library(Thermal.thresholds)
+library(OceanSDM) # This package
+library(lubridate) # For editing date
+library(ENMTML) # For constructing 2D SDMs
+library(raster) # For dealing with raster files
+library(terra) # For preparing raster files
+library(sdm) # For estimating species response curves
+library(ncdf4) # For dealing with .nc files
+library(ggplot2) # For figure generation
+library(dplyr) # To dealing with dataframe files
 ```
-# Introduction
-
-This is a package used to estimate preferred and tolerable ocean temperature by pelagic fish species such as whale sharks.
-
-# load the data
-
-To use the whale shark data, execute:
-```{r}
-data(ws)
+# 1. Prepare species and environmental data 
+## 1.1 Download species data from GBIF and OBIS using ob_data() 
+The Global Biodiversity Information Faculty (GBIF) and Ocean Biodiversity Information System (OBIS) are the two major sources of species occurrences at the global scale. The function ob_data() helps users automatically download the geo-referenced occurrences of either a single or many species. Here I demonstrated with an example of smaller temporal and spatial ranges than the real case in the paper to save the running time for creating this vignette.
+```{r occurrence, cache=TRUE}
+ ws_occ<-ob_data(
+ key<-'Rhincodon typus' ,# It can be a vector of the Latin names of all focal species
+ sp_geometry <- "POLYGON ((90 -41, 90 0, 180 0, 180 -41, 90 -41))", # Replace this to "POLYGON ((90 -41, 90 40, 180 40, 180 -41, 90 -41))" to simulate my real case study!!!
+ start_date<-"2020-01-01", # Replace this to "2015-01-01" to simulate my real case study!!!
+ end_date<-"2024-12-30",
+ event_date<-'2020-01-01,2024-12-30') # Replace this to '2015-01-01,2024-12-30' to simulate my real case study!!!
+# # save the occurrences
+# write.csv(ws_occ$sp_occ,"F:/whaleshark_sdm/occ/R_typus.csv",row.names = F)
 ```
 
-# run the fit_temp()
-You can run this function with the whale shark data:
-```{r}
-fit_temp(ws,30)
+## 1.2 Download .nc files of marine environmental predictors using env_download() 
+The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). But please note you must first install the copernicusmarine toolbox (and configure its running environment with conda or other softwares, see details at https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-installation) on which this function was built. Here I only showed a case of extracting sea surface temperature at smaller temporal and geographic ranges than the real case I used in the paper.
+```{r set up tool path, cache=TRUE}
+## Set up the path of the cms downloading tool and output directory
+path_cms<-"C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"
+out_dir <- "F:/whaleshark_sdm/cmems"
 ```
+### 1.2.1 Extract surface layer of marine environmental predictors
+```{r download surface predictor data, cache=TRUE}
+productId <- "cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"
+variable <- " --variable thetao_mean"
+date_min <- ymd(20200101) # start_date, it should be ymd(20150101) in the paper
+date_max <- ymd(20241201) # end_date
+lon<-c(90,180)
+lat<-c(-41,0) # latitudinal range, it should be c(-41,40) in the paper
+## sea surface temperature
+depth <- list(0.51, 2) # depth_min, depth_max
+out_name <- paste("IndoWPac_temp_1m_y2020_y2024.nc", sep="") # it should be paste("IndoWPac_temp_1m_y2015_y2024.nc", sep="") in the paper
+env_download(path_cms,out_dir,productId,variable,
+              date_min,date_max,lon,lat,depth,out_name)
+## sea surface height
+# variable <- " --variable zos_mean"
+# out_name <- paste("IndoWPac_slh_1m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+## mixed layer depth
+# variable <- " --variable mlotst_mean"
+# out_name <- paste("IndoWPac_mlt_1m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+## salinity
+# variable <- " --variable so_mean"
+# out_name <- paste("IndoWPac_so_1m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+```
+
+### 1.2.2 Extract multiple depth layers of ocean temperature
+This step is NOT necessary for the 2D SDM construction, but is required for estimating suitable/tolerable depths based on species realized climatic niche and the three-dimensional distributions of the focal climatic variable (here, temperature) over the chosen temporal bins (here, four quarters). Here given the size of the multi-depth layers of data, I split it into three .nc files. The codes were set to 'not run' with the hash tag while creating this vignette as it was time consuming. Users can simply remove these hash tags (Using 'Control+Shift+C' for Windows) and run the code.
+```{r download multi-depth layers of temperature, cache=TRUE}
+# variable <- " --variable thetao_mean"
+
+# depth <- list(0.50, 200) # depth_min, depth_max
+# out_name <- paste("IndoWPac_temp_200m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+# depth <- list(200, 400) # depth_min, depth_max
+# out_name <- paste("IndoWPac_temp_200_400m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+# depth <- list(400, 1050) # depth_min, depth_max
+# out_name <- paste("IndoWPac_temp_400_1050m_y2015_y2024.nc", sep="")
+#env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+# depth <- list(1050, 1946) # depth_min, depth_max
+# out_name <- paste("IndoWPac_temp_1050_1946m_y2015_y2024.nc", sep="")
+#env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+```
+
+### 1.2.3 Extract sea surface data for npp and o2 from another CMS dataset
+```{r download npp and o2, cache=TRUE}
+# out_dir <- "F:/cmems"
+# productId <- "cmems_mod_glo_bgc_my_0.25deg_P1M-m"
+# date_min <- ymd(20150101) # start_date
+# date_max <- ymd(20241201) # end_date
+# lon<-c(90,180)
+# lat<-c(-41,40)
+# depth <- list(0.51, 2) # depth_min, depth_max
+# variable <- " --variable nppv"
+# out_name <- paste("IndoWPac_npp_1m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+
+# variable <- " --variable o2"
+# out_name <- paste("IndoWPac_o2_1m_y2015_y2024.nc", sep="")
+# env_download(path_cms,out_dir,productId,variable,
+#             date_min,date_max,lon,lat,depth,out_name)
+```
+For extracting predictor datasets of future projections, please check https://esgf-node.llnl.gov/search/cmip6/
+There is also an R package for downloading CMIP6 data: https://github.com/marine-ecologist/CMIP6/blob/main/CMIP6_projections.R
+
+### 1.2.4 Prepare temporally-binned predictors using env_bin()
+To predict the dynamic distributions of marine species across the 2D space, all predictors should be aggregated into mean values within the specific temporal bins.  
+```{r, cache=TRUE}
+gc() # clear the R environment 
+## sea surface temperature
+env_bin(sp_trait="pelagic",            
+        env_path="F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2020_y2024.nc", 
+# in the paper, I used "F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2015_y2024.nc"
+       out_dir="F:/whaleshark_sdm/bin2",  
+# in the paper, I used "F:/whaleshark_sdm/bin"
+        var_name="thetao_mean",
+        lon_min=90,
+       lon_max=180,
+        lat_min=-41,
+        lat_max=0, # in the paper, I used 40
+       date_min=ymd(20200101), # in the paper, I used ymd(20150101)
+        date_max = ymd(20241201),
+        temporal_bin="quarterly")
+## sea surface height
+# env_bin(sp_trait="pelagic",
+#        env_path="F:/cmems/IndoWPac_slh_1m_y2015_y2024.nc",
+#        out_dir="F:/whaleshark_sdm/bin",
+#        var_name="zos_mean",
+#        lon_min=90,
+#        lon_max=180,
+#        lat_min=-41,
+#        lat_max=40,
+#        date_min=ymd(20150101),
+#        date_max = ymd(20241201),
+#        lag_days= 50,
+#        temporal_bin="quarterly")
+## mixed layer depth
+# env_bin(sp_trait="pelagic",
+#        env_path="F:/cmems/IndoWPac_mlt_1m_y2015_y2024.nc",
+#        out_dir="F:/whaleshark_sdm/bin",
+#        var_name="mlotst_mean",
+#        lon_min=90,
+#        lon_max=180,
+#        lat_min=-41,
+#        lat_max=40,
+#        date_min=ymd(20150101),
+#        date_max = ymd(20241201),
+#        lag_days= 50,
+#        temporal_bin="quarterly")
+## sea surface salinity
+# env_bin(sp_trait="pelagic",
+#        env_path="F:/cmems/IndoWPac_so_1m_y2015_y2024.nc",
+#        out_dir="F:/whaleshark_sdm/bin",
+#        var_name="so_mean",
+#        lon_min=90,
+#        lon_max=180,
+#        lat_min=-41,
+#        lat_max=40,
+#        date_min=ymd(20150101),
+#        date_max = ymd(20241201),
+#        lag_days= 50,
+#        temporal_bin="quarterly")
+## sea surface NPP
+# env_bin(sp_trait="pelagic",
+#        env_path="F:/cmems/IndoWPac_npp_1m_y2015_y2024.nc",
+#        out_dir="F:/whaleshark_sdm/bin",
+#        var_name="nppv",
+#        lon_min=90,
+#        lon_max=180,
+#        lat_min=-41,
+#        lat_max=40,
+#        date_min=ymd(20150101),
+#        date_max = ymd(20241201),
+#        lag_days= 50,
+#        temporal_bin="quarterly")
+## sea surface dissolved oxygen
+# env_bin(sp_trait="pelagic",
+#        env_path="F:/cmems/IndoWPac_o2_1m_y2015_y2024.nc",
+#        out_dir="F:/whaleshark_sdm/bin",
+#        var_name="o2",
+#        lon_min=90,
+#        lon_max=180,
+#        lat_min=-41,
+#        lat_max=40,
+#        date_min=ymd(20150101),
+#        date_max = ymd(20241201),
+#        lag_days= 50,
+#        temporal_bin="quarterly")
+```
+### 1.2.5 Download the depth dataset 
+The Bio-ORACLE provides statistics of ocean depths (mean, maximum, etc.). Here I did not run the code while creating this vignette, but you can run it after removing hash tags. 
+```{r download depth, cache=TRUE}
+# install.packages("devtools")
+# devtools::install_github("bio-oracle/biooracler")
+# library(biooracler)
+# library(terra)
+# list<-list_layers("Ocean depth")
+# dataset_id <- list$dataset_id[158]
+# latitude <- c(-41, 40)
+# longitude <- c(90, 179.975)
+# constraints <- list(latitude, longitude)
+# names(constraints) <- c("latitude", "longitude")
+# variables <- "bathymetry_mean"
+# depth <- download_layers(dataset_id, variables, constraints)
+# depth<-abs(depth) # convert values to positive.
+# so<-terra::rast("F:/whaleshark_sdm/bin/Q4_so_mean.asc")
+# depth_resampled <- resample(depth, so, method = "bilinear")
+# writeRaster(raster(depth_resampled),"F:/whaleshark_sdm/bin/depth_mean.asc",
+#     format="ascii",NAflag=-9999,overwrite=TRUE)
+```
+
+### 1.2.6 Plot environmental predictors (optional)
+```{r plot_data, cache=TRUE}
+# Load required packages
+library(terra)
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+library(scales)   # for squish
+
+# Main directory and quarters
+main_dir <- "F:/whaleshark_sdm/bin"
+quarters <- c("Q1", "Q2", "Q3", "Q4")
+
+# Loop over each quarter
+for (q in quarters) {
+  quarter_path <- file.path(main_dir, q)
+
+  # Read all .asc files in the quarter folder
+  files <- list.files(quarter_path, pattern = "\\.asc$", full.names = TRUE,
+             ignore.case = TRUE)
+  r <- rast(files)
+  names(r) <- tools::file_path_sans_ext(basename(files))
+
+  n_layers <- nlyr(r)
+
+## Convert raster layers to a data frame for ggplot
+  df_list <- list()
+  for (i in 1:n_layers) {
+    df <- as.data.frame(r[[i]], xy = TRUE, na.rm = FALSE)
+    colnames(df) <- c("x", "y", "value")
+    df$variable <- names(r)[i]
+    df_list[[i]] <- df
+  }
+  df_all <- bind_rows(df_list)
+
+# Create a list of ggplot objects with external labels
+  gg_list <- list()
+  for (i in 1:n_layers) {
+    layer_name <- names(r)[i]
+    df_sub <- filter(df_all, variable == layer_name)
+## Compute 2% and 98% percentiles for color stretching (percent clip)
+    values_vec <- df_sub$value[!is.na(df_sub$value)]
+    if (length(values_vec) > 0) {
+      p2 <- quantile(values_vec, 0.02, na.rm = TRUE)
+      p98 <- quantile(values_vec, 0.98, na.rm = TRUE)
+      # If p2 == p98, avoid identical limits; use full range
+      if (p2 == p98) {
+        p2 <- min(values_vec, na.rm = TRUE)
+        p98 <- max(values_vec, na.rm = TRUE)
+      }
+    } else {
+      p2 <- 0; p98 <- 1  # fallback
+    }
+
+    p <- ggplot(df_sub, aes(x = x, y = y, fill = value)) +
+      geom_raster() +
+      scale_fill_viridis_c(
+        option = "inferno",
+        begin = 0.1,
+        end = 0.9,
+        limits = c(p2, p98),      # percent clip range
+        oob = squish,            # squish extremes to the nearest limit color
+        na.value = "transparent"
+      ) +
+      coord_fixed() +
+      labs(title = layer_name, fill = "Value") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size =8, face = "bold", hjust = 0.5),
+        legend.position = "right",
+        legend.key.size = unit(0.25, "cm"),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        legend.spacing = unit(0.1, "cm"),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        plot.margin = ggplot2::margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
+      )
+
+    ggdraw_obj <- ggdraw(p) +
+      draw_label(
+        label = paste0("(", letters[i], ")"),
+        x = 0, y = 1,
+        hjust = -0.05,
+        vjust = 1,
+        size = 8,
+        fontface = "bold"
+      )
+    gg_list[[i]] <- ggdraw_obj
+  }
+
+## Arrange subplots
+  ncol <- ceiling(sqrt(n_layers))
+  nrow <- ceiling(n_layers / ncol)
+  combined <- plot_grid(plotlist = gg_list,
+                 ncol = ncol, nrow = nrow, align = "hv")
+
+## Create title with "Environmental predictors of QX" and separate by ~2 lines
+  title_text <- paste0("Environmental predictors of ", q)
+  title_gg <- ggdraw() +
+    draw_label(title_text, x = 0.5, y = 0.5, size = 16, fontface = "bold") +
+    theme(plot.margin = ggplot2::margin(b = 20, t = 10, unit = "pt"))
+
+#   # Combine title and plot vertically
+  final_plot <- plot_grid(title_gg, combined, ncol = 1,
+                  rel_heights = c(0.12, 1), align = "v")
+
+## Display the plot
+  print(final_plot)
+}
+
+```
+
+## 1.3 Adjust occurrence coordinates with correct_ob() #############
+Our previous SDM studies often find that some occurrences were not spatially matched with the environmental layer but these points fall within a close distance to the environmental layer. Here I showed an example with temperature of the 1st quarter bin
+```{r adjust_coordinates, cache=TRUE}
+#### 1st quarter
+temperature_raster_path <- "F:/whaleshark_sdm/bin/Q1/Temperature.asc"
+final_combined_data<-read.csv("F:/whaleshark_sdm/occ/R_typus.csv")
+str(final_combined_data)
+output_path<-"F:/whaleshark_sdm/occ/R_typus_adj.csv"
+corrected_ob <- correct_ob(
+  occurrence_data = final_combined_data,
+  predictor_raster_path = temperature_raster_path,
+  max_distance_km = 10,
+  out_dir = output_path,
+  verbose = TRUE
+)
+summary(corrected_ob)
+## Plot the occurrences in the map of sea surface temperature of the first quarter and IUCN range map
+# setwd("F:/whaleshark_sdm/figures")
+corrected_ob<-read.csv("F:/whaleshark_sdm/occ/R_typus_adj.csv")
+corrected_ob1<-corrected_ob[which(corrected_ob$month<4),]
+head(corrected_ob1)
+# tiff("Q1_sst_points.tif",width=1317,height = 880,res = 300)
+par(mar=c(2,2,1,1))
+plot(raster::raster(temperature_raster_path),legend.args = list(text = 'SST(°C)',cex=0.6,side=2),cex=0.5)
+range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+plot(sf::st_read(range_path)$geometry,add=T,border="red",lwd=1)
+points(corrected_ob1$decimalLongitude,corrected_ob1$decimalLatitude,pch=20,col="blue",cex=0.5)
+legend("topleft",
+       legend = c("IUCN range", "Occurrences"),
+       col = c("red", "blue"),
+       lwd = c(2, NA),
+       pch = c(NA, 16),
+       bty = "n",
+       cex=0.6)
+# dev.off()
+
+#### 2nd quarter
+
+# corrected_ob<-read.csv("F:/whaleshark_sdm/occ/R_typus_adj.csv")
+# corrected_ob2<-corrected_ob[which((corrected_ob$month>3) & (corrected_ob$month<7)),]
+#  head(corrected_ob2)
+# tiff("Q2_sst_points.tif",width=1317,height = 880,res = 300)
+# par(mar=c(2,2,1,1))
+# plot(raster::raster(temperature_raster_path),legend.args = list(text = 'SST(°C)',cex=0.6,side=2))
+# range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+# plot(sf::st_read(range_path)$geometry,add=T,border="red",lwd=1)
+# points(corrected_ob2$decimalLongitude,corrected_ob2$decimalLatitude,pch=20,col="blue",cex=0.5)
+# legend("topleft",
+#        legend = c("IUCN range", "Occurrences"),
+#        col = c("red", "blue"),
+#        lwd = c(2, NA),
+#        pch = c(NA, 16),
+#        bty = "n",
+#        cex=0.6)
+# dev.off()
+
+#### 3rd quarter
+
+# corrected_ob<-read.csv("F:/whaleshark_sdm/occ/R_typus_adj.csv")
+# corrected_ob3<-corrected_ob[which((corrected_ob$month>6) & (corrected_ob$month<10)),]
+# head(corrected_ob3)
+#  tiff("Q3_sst_points.tif",width=1317,height = 880,res = 300)
+# par(mar=c(2,2,1,1))
+# plot(raster::raster(temperature_raster_path),legend.args = list(text = 'SST(°C)',cex=0.6,side=2))
+# range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+# plot(sf::st_read(range_path)$geometry,add=T,border="red",lwd=1)
+# points(corrected_ob3$decimalLongitude,corrected_ob3$decimalLatitude,pch=20,col="blue",cex=0.5)
+# legend("topleft",
+#        legend = c("IUCN range", "Occurrences"),
+#        col = c("red", "blue"),
+#        lwd = c(2, NA),
+#        pch = c(NA, 16),
+#        bty = "n",
+#        cex=0.6)
+#  dev.off()
+# 
+#### 4th quarter
+# 
+# corrected_ob<-read.csv("F:/whaleshark_sdm/occ/R_typus_adj.csv")
+# corrected_ob4<-corrected_ob[which(corrected_ob$month>9),]
+# head(corrected_ob4)
+# # tiff("Q4_sst_points.tif",width=1317,height = 880,res = 300)
+# par(mar=c(2,2,1,1))
+# plot(raster::raster(temperature_raster_path),legend.args = list(text = 'SST(°C)',cex=0.6,side=2))
+# range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+# plot(sf::st_read(range_path)$geometry,add=T,border="red",lwd=1)
+# points(corrected_ob4$decimalLongitude,corrected_ob4$decimalLatitude,pch=20,col="blue",cex=0.5)
+# legend("topleft",
+#        legend = c("IUCN range", "Occurrences"),
+#        col = c("red", "blue"),
+#        lwd = c(2, NA),
+#        pch = c(NA, 16),
+#        bty = "n",
+#        cex=0.6)
+#  dev.off()
+```
+
+## 1.4 Check and remove spatio-temporal bias with bias_check() and bias_reduce()
+Spatio-temporal sampling bias is a common issue in global biodiversity data and it degrades model robustness. Here, bias_check() and bias_reduce() are two functions to examine and reduce sampling bias (see details in Supplementary Information), respectively, adapted from the dynamicSDM (Dobson et al., 2023). 
+
+Although designed for highly-mobile marine fish, these data-preparation functions can apply broadly to other marine species.
+```{r, cache=TRUE}
+colnames(corrected_ob)
+occ_ob<-corrected_ob[,c(1:8)]
+colnames(occ_ob)[2:3]<-c("y","x")
+#### For the quarterly SDMs
+occ_ob2 <- occ_ob %>%
+  mutate(
+         quarter = case_when(
+           month %in% 1:3   ~ "Q1",
+           month %in% 4:6   ~ "Q2",
+           month %in% 7:9  ~ "Q3",
+           month %in% 10:12 ~ "Q4",
+           TRUE ~ NA_character_
+         ))%>% filter(!is.na(quarter))
+table(occ_ob2$quarter)
+
+#### For the seasonal SDMs
+# occ_ob3 <- occ_ob2 %>%
+#  mutate(date = make_date(year, month, day),
+#         adjusted_date = date - days(73), 
+# # Parse date information and adjust for sea temperature lag (73 days)
+#         adjusted_month = month(adjusted_date),
+#         hemisphere = ifelse(y >= 0, "Northern", "Southern"),
+#         season = case_when(
+#           hemisphere == "Northern" & adjusted_month %in% 3:5   ~ "Spring",
+#           hemisphere == "Northern" & adjusted_month %in% 6:8   ~ "Summer",
+#           hemisphere == "Northern" & adjusted_month %in% 9:11  ~ "Autumn",
+ #          hemisphere == "Northern" & adjusted_month %in% c(12,1,2) ~ "Winter",
+  #         hemisphere == "Southern" & adjusted_month %in% 3:5   ~ "Autumn",
+  #         hemisphere == "Southern" & adjusted_month %in% 6:8   ~ "Winter",
+  #         hemisphere == "Southern" & adjusted_month %in% 9:11  ~ "Spring",
+#           hemisphere == "Southern" & adjusted_month %in% c(12,1,2) ~ "Summer",
+#           TRUE ~ NA_character_
+#         ))
+# occ_ob2 <- occ_ob3 %>% filter(!is.na(season))
+range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+bias_test<-bias_check(occ_data=occ_ob2,
+                        temporal_level="quarter",
+                        spatial_method="range_map",
+                        range_path=range_path,
+                        prj = "+proj=longlat +datum=WGS84")
+bias_test$Plots
+occ_thinned<-bias_reduce(occ_data=occ_ob2,
+                           bias_result=bias_test,
+                  min_dist_km = 56,
+                          thin_reps = 50,
+                          temporal_level = "quarter",
+                          seed = 123)
+bias_test<-bias_check(occ_data=occ_thinned,  
+                        temporal_level="quarter",
+                        spatial_method="range_map",
+                        range_path=range_path,
+                        prj = "+proj=longlat +datum=WGS84")
+bias_test$Plots 
+## Note that the spatial bias still exist but have been largely reduced. 
+## A certain level of spatial autocorrelation of occurrences are ecological 
+## meaningful given species are rarely uniformly distributed in the ocean, 
+## and such autocorrelation is not problematic for machine-learning algorithms.
+
+#### save the thinned occurrences
+# write.table(occ_thinned, "F:/whaleshark_sdm/occ/R_typus.txt", 
+#   append = FALSE, sep = "\t", dec = ".",row.names = FALSE, col.names = TRUE)
+# occ_q1<-occ_thinned[which(occ_thinned$quarter=="Q1"),]
+# write.table(occ_q1, "F:/whaleshark_sdm/occ/R_typus_q1.txt", 
+#   append = FALSE, sep = "\t", dec = ".",row.names = FALSE, col.names = TRUE)
+# occ_q2<-occ_thinned[which(occ_thinned$quarter=="Q2"),]
+# write.table(occ_q2, "F:/whaleshark_sdm/occ/R_typus_q2.txt", 
+#    append = FALSE, sep = "\t", dec = ".",row.names = FALSE, col.names = TRUE)
+# occ_q3<-occ_thinned[which(occ_thinned$quarter=="Q3"),]
+# write.table(occ_q3, "F:/whaleshark_sdm/occ/R_typus_q3.txt", 
+#    append = FALSE, sep = "\t", dec = ".",row.names = FALSE, col.names = TRUE)
+# occ_q4<-occ_thinned[which(occ_thinned$quarter=="Q4"),]
+# write.table(occ_q4, "F:/whaleshark_sdm/occ/R_typus_q4.txt", 
+#    append = FALSE, sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
+```
+
+# 2. Build 2D SDMs for each temporal bin and generate related figures ####
+## 2.1 SDM construction for each quarter with TB_sdm()
+To predict horizontal distributions within each temporal bin, TB_sdm() leverages the ENMTML package (Andrade et al., 2020). This function streamlines multiple modelling steps: pseudo absence generation, predictor collinearity reduction, model calibration, evaluation, ensemble construction, variable importance quantification, and prediction. It supports regression, envelope, machine learning, and process based algorithms, as well as ensembles (see details in Andrade et al., 2020). TB_sdm() also incorporates the sdm package to plot partial effects (Naimi & Araújo, 2016). Here I only run the code for the 1st quarter to save time for creating this vignette webpage.
+```{r, cache=TRUE}
+#### Prior to this step, please rename the environmental predictors to make the
+#### the names of variables of each quarterly bin the same as follows:
+#### Depth, Mixed layer depth, Dissolved oxygen, Temperature, Salinity, 
+####      Net primary productivity, Sea surface height.
+####  Name the folders of each bin as Q1, Q2, Q3, and Q4.
+####
+# if (!"devtools"%in%installed.packages()){install.packages("devtools")}
+# devtools::install_github("andrefaa/ENMTML")
+## Q1
+d_env<-"F:/whaleshark_sdm/bin/Q1"  #
+d_prj<-"F:/whaleshark_sdm/bin/proj"  #
+d_occ<-"F:/whaleshark_sdm/occ/R_typus_q1.txt" #
+d_res<-"F:/whaleshark_sdm/result_sdm/Q1"
+
+sdm_q1<-TB_sdm(env_path=d_env,prj_path=d_prj,occ_path=d_occ,
+                 eval_occ=NULL,res_path=d_res,species="Species",x="x",y="y",
+                 colin_var=NULL,
+                 sp_accessible_area=NULL,
+                 pseudoabs_method=c(method='ENV_CONST'),
+                 pres_abs_ratio=0.3,
+                 part= c(method='BLOCK'),
+                 algorithm=c('BRT','SVM','RDF','MXD'),
+                 thr=c(type = 'MAX_TSS'),
+                 ensemble=c(method='SUP', metric='TSS'))
+## Q2
+d_env<-"F:/whaleshark_sdm/bin/Q2"  #
+d_occ<-"F:/whaleshark_sdm/occ/R_typus_q2.txt" #
+d_res<-paste("F:/whaleshark_sdm/result_sdm/Q2") #
+
+sdm_q2<-TB_sdm(env_path=d_env,prj_path=NULL,occ_path=d_occ,
+       eval_occ=NULL,res_path=d_res,species="Species",x="x",y="y",
+       colin_var=NULL,
+       sp_accessible_area=NULL,
+       pseudoabs_method=c(method='ENV_CONST'),
+       pres_abs_ratio=0.3,
+       part= c(method='BLOCK'),
+       algorithm=c('BRT','SVM','RDF','MXD'),
+       thr=c(type = 'MAX_TSS'),
+       ensemble=c(method='SUP', metric='TSS'))
+## Q3
+d_env<-"F:/whaleshark_sdm/bin/Q3"  #
+d_occ<-"F:/whaleshark_sdm/occ/R_typus_q3.txt" #
+d_res<-paste("F:/whaleshark_sdm/result_sdm/Q3") #
+
+sdm_q3<-TB_sdm(env_path=d_env,prj_path=NULL,occ_path=d_occ,
+       eval_occ=NULL,res_path=d_res,species="Species",x="x",y="y",
+       colin_var=NULL,
+       sp_accessible_area=NULL,
+       pseudoabs_method=c(method='ENV_CONST'),
+       pres_abs_ratio=0.3,
+       part= c(method='BLOCK'),
+       algorithm=c('BRT','SVM','RDF','MXD'),
+       thr=c(type = 'MAX_TSS'),
+       ensemble=c(method='SUP', metric='TSS'))
+## Q4
+d_env<-"F:/whaleshark_sdm/bin/Q4"  #
+d_occ<-"F:/whaleshark_sdm/occ/R_typus_q4.txt" #
+d_res<-paste("F:/whaleshark_sdm/result_sdm/Q4") #
+
+sdm_q4<-TB_sdm(env_path=d_env,prj_path=NULL,occ_path=d_occ,
+       eval_occ=NULL,res_path=d_res,species="Species",x="x",y="y",
+       colin_var=NULL,
+       sp_accessible_area=NULL,
+       pseudoabs_method=c(method='ENV_CONST'),
+       pres_abs_ratio=0.3,
+       part= c(method='BLOCK'),
+       algorithm=c('BRT','SVM','RDF','MXD'),
+       thr=c(type = 'MAX_TSS'),
+       ensemble=c(method='SUP', metric='TSS'))
+## save data
+# save(sdm_q1,sdm_q2,sdm_q3,sdm_q4, file = "F:/whaleshark_sdm/example.RData")
+
+```
+
+## 2.2 Plot predictive maps, variable importance and species response curves with TB_map(), TB_varimp(), and TB_rescur() #
+After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() automatically produces related figures (i.e., probability and binary maps, variable importance, and species response curves) required for publication.
+```{r,cache=TRUE}
+rm(list = setdiff(ls(), c("sdm_q1", "sdm_q2", "sdm_q3", "sdm_q4")))
+## plot predictive maps
+TB_map(root_path = "F:/whaleshark_sdm/result_sdm",
+                   output_width = 8, output_height = 12,
+                   output_filename = "SDM_quarterly")
+# Prepare model list
+# load("F:/whaleshark_sdm/example.RData")
+rm(list = setdiff(ls(), c("sdm_q1", "sdm_q2", "sdm_q3", "sdm_q4")))
+model_list <- list(
+  Q1 = sdm_q1,
+  Q2 = sdm_q2,
+  Q3 = sdm_q3,
+  Q4 = sdm_q4
+)
+
+# Name each temporal bin
+time_names <- c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")
+
+#  Plot variable importance
+imp_plot <- TB_varimp(model_list,
+                      colors = c("1st Quarter" = "#FFB347",
+                                 "2nd Quarter" = "#4CAF50",
+                                 "3rd Quarter" = "#FF6B4A",
+                                 "4th Quarter" = "#5D9BEC"),
+                      time_names = time_names,
+                      save_path = "F:/whaleshark_sdm/result_sdm/variable_importance.tif")
+imp_plot
+#  Plot response curves panel (vertical stacked legend)
+res_plot <- TB_rescur(model_list,
+                      colors = c("1st Quarter" = "#FFB347",
+                                 "2nd Quarter" = "#4CAF50",
+                                 "3rd Quarter" = "#FF6B4A",
+                                 "4th Quarter" = "#5D9BEC"),
+                      time_names = time_names,
+                      legend_position = "vertical",
+                      width = 11,
+                      height = 4,
+                      save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
+res_plot
+#  Plot response curves panel (unified legend at bottom)
+res_plot2 <- TB_rescur(model_list,
+                       colors = c("1st Quarter" = "#FFB347",
+                                  "2nd Quarter" = "#4CAF50",
+                                  "3rd Quarter" = "#FF6B4A",
+                                  "4th Quarter" = "#5D9BEC"),
+                       time_names = time_names,
+                       legend_position = "bottom",
+                       save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
+res_plot2
+
+```
+
+# 3. Estimate suitable/preferred depth and map the 3D habitat for each temporal bin
+## 3.1 Estimate climatic niche (temperature) with niche_tag() or niche_occ() ##
+A key contribution of this package is providing tools to estimate species realized climatic niche based on either tagging studies or species traits about water-column preference. I correspondingly developed two functions, niche_tag() and niche_occ(). Both functions will save a dataframe "summary_niche_fit.csv", which stored the estimated optimal temperature, preferred temperature range, and tolerable temperature range. It will be used as an input for TB_depth(). The niche fitting plot was also saved.
+
+### 3.1.1 Use niche_tag to estimate thermal niche based on temperature utilization data from tagging studies
+Many studies have indicated that the observed depths of highly-mobile marine fishes are primarily determined by physiological constraints (especially thermal niche and oxygen demand) (Arrowsmith et al., 2021; Coffey et al., 2017; Dahms & Killen, 2023; Valle et al., 2024), prey availability (Braun et al., 2023), and life history needs (e.g., reproduction, nursery, and wintering) (Andrzejaczek et al., 2019). While prey availability and life history needs are vital, these factors are currently difficult to monitor or correlate with depths. Nevertheless, species realized climatic niche (e.g., the observed thermal niche) is a result of the integrated impacts of such physical and biological factors and can be correlated with depths. The major challenge is thus how to quantify species realized climatic niche.
+
+An optimal approach to estimate species realized climatic niche is using tag-based frequency of occupancy across in-situ ocean climate bins (e.g., temperature bins), which can be readily extracted from figures (using WebPlotDigitizer) in published tagging studies. niche_tag() estimates tolerable climate range (TCR) and preferred climate range (PCR) from such data. It first combines frequency data across studies using a weighted average approach (see the equation in the paper).
+
+The function then allows users to choose suitable approaches to estimate TCR and PCR. For TCR, users can apply specific percentiles (default, 1st and 99th) of the temperature data, so as for PCR (default, 25th and 75th) (Hertz et al., 1993). The function also provides another option—the full width at half maximum (FWHM) from Gaussian kernel density estimation—to estimate PCR.
+
+When tag-based temperature data are unavailable, niche_occ() implements an alternative, trait based approach. It utilizes bias-reduced occurrences to extract real-time temperatures from the depth layer preferred by species (e.g., surface for pelagic fish) rather than depths recorded in biodiversity databases as in the voluModel package. It then allows users to select similar methods (quantiles or FWHM) to estimate TCR and PCR as mentioned for niche_tag().
+
+
+```{r niche_tag,cache=TRUE}
+## Article 1 data (used as the standard bin given the no. of tagged individuals is the highest)
+article1_df <- data.frame(
+  bin_lower = c(0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39),
+  bin_upper = c(3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42),
+  percentage = c(0,0,0,0,0,0,0.3, 11, 29, 37, 16, 6, 0.4, 0.3) / 100,
+  article_weight = 50  # Sample size: 50 individuals
+)
+
+## Article 2 data (different binning scheme)
+article2_df <- data.frame(
+  bin_lower = c(10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30),
+  bin_upper = c(12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5),
+  percentage =c(0.8856, 0.8856, 0.6642, 0.4428, 0.4428, 4.6494, 29.4465, 59.3358, 2.8782)/100 ,
+  article_weight = 8  # Sample size: 8 individuals
+)
+
+## Article 3 data (another different binning scheme)
+article3_df <- data.frame(
+  bin_lower = c(10, 12, 14, 16, 18, 20, 22, 24, 26, 28),
+  bin_upper = c(12, 14, 16, 18, 20, 22, 24, 26, 28, 30),
+  percentage = c(0.65445, 3.02054, 4.36468, 4.36468, 4.36468, 6.207209, 12.58558, 25.50846, 26.01188, 12.91784)/100 ,
+  article_weight = 1  # Sample size: 1 individuals
+)
+
+## Article 4 data (another different binning scheme)
+article4_df <- data.frame(
+  bin_lower = c(0, 2, 5, 10, 15, 17.5, 20, 22, 25, 27, 29,31),
+  bin_upper = c(2, 5, 10, 15, 17.5, 20, 22, 25, 27, 29,31,33),
+  percentage =  c(0.039048, 0.002092, 0.055783, 2.545097, 4.554678, 8.029258, 18.46834, 44.00787, 12.77708, 8.686102, 0.594088, 0.240564)/100,
+  article_weight = 15  # Sample size: 15 individuals
+)
+
+## Article 5 data (another different binning scheme)
+article5_df <- data.frame(
+  bin_lower = c(0, 5, 10, 15, 18, 20, 22, 24, 26, 28, 30, 32, 34),
+  bin_upper = c(5, 10, 15, 18, 20, 22, 24, 26, 28, 30, 32, 34,36),
+  percentage =  c(0.002896, 0.004234, 0.013009, 0.012676, 0.011109, 0.018206, 0.055804, 0.443287, 0.41829, 0.020489,0,0,0),
+  article_weight = 27  # Sample size: 15 individuals
+)
+## Article 6 data (another different binning scheme)
+article6_df <- data.frame(
+  bin_lower = c(4,8,12,16,20,22,24,26,28),
+  bin_upper = c(8,12,16,20,22,24,26,28,30),
+  percentage =  c(0.0188, 0.0075, 0.0063, 0.0088, 0.0151, 0.1217, 0.3111, 0.4027, 0.1116),
+  article_weight = 17  # Sample size: 15 individuals
+)
+## Article 7 data (another different binning scheme)
+article7_df <- data.frame(
+  bin_lower = c(10,12.5,15,17.5,20,22.5,25,27.5,30,32.5),
+  bin_upper = c(12.5,15,17.5,20,22.5,25,27.5,30,32.5,35),
+  percentage =  c(0, 0.029412, 0.011765, 0.011765, 0.019608, 0.060785, 0.372549, 0.37647, 0.115686, 0.001961),
+  article_weight = 17  # Sample size: 15 individuals
+)
+
+## Create list of articles
+data_list <- list(article1_df, article2_df, article3_df,article4_df,article5_df,article6_df,article7_df)
+
+## Define unified global binning scheme (follow article1_df)
+global_bins <- article1_df[,1:2]
+## Run estimation
+temp_fit<-niche_tag(
+    data_list,
+    global_bins,
+    samples_per_article = 10000,
+    toler_quantiles = c(0.01, 0.99),
+    pref_method = "FWHM",
+    pref_quantiles =NULL,
+    variable_name = "Temperature",
+    unit = "℃",
+    seed = 123,
+    width = 6,
+    height = 5,
+    save_path = "F:/whaleshark_sdm/temp_fit/tag"
+)
+```
+
+
+### 3.1.2 Extract temperature data from thinned occurrences to estimate climatic niche
+Here, based on the pelagic trait of the focal species, I used niche_occ() to extract the temperature at the depth of 1 m at the thinned occurrences to estimate thermal niche.
+```{r niche_occ,cache=TRUE}
+occ_path<-"F:/whaleshark_sdm/occ/R_typus.txt"
+var_name<-"thetao_mean"
+temp_path<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2015_y2024.nc" # ocean temperature at the surface layer (depth = 1m)
+save_path <- "F:/whaleshark_sdm/temp_fit/habitat"
+min_year<-2015
+lon_range<-c(90,180)
+lat_range<-c(-41,40)
+width<-6
+height<-5
+temp_occ<-niche_occ(
+    occ_path,
+    temp_path,
+    toler_quantiles = c(0.01, 0.99),
+    pref_method = "FWHM",
+    pref_quantiles =NULL,
+    save_path,
+    min_year,
+    var_name = "thetao_mean",
+    env_label = "Temperature",
+    unit = "℃",
+    lon_range,
+    lat_range,
+    width = 8,
+    height = 5
+)
+```
+
+### 3.1.3 Extract oxygen data (optional)
+Although the depth limits might be best estimated with thermal niche, other physiological constraints such as demand of oxygen can be estimated as well with data in a user-defined depth at species occurrences. 
+```{r,cache=TRUE}
+# occ_path<-"F:/whaleshark_sdm/occ/R_typus.txt"
+# var_name<-"o2"
+# o2_path<-"F:/cmems/IndoWPac_o2_1m_y2015_y2024.nc" # dissolved oxygen at the surface layer (depth = 1m)
+# save_path <- "F:/whaleshark_sdm/o2_fit/habitat"
+# 
+# oxy_occ<-niche_occ(
+#   occ_path,
+#   o2_path,
+#   toler_quantiles = c(0.01, 0.99),
+#   pref_method = "FWHM",
+#   pref_quantiles =NULL,
+#   save_path,
+#   min_year,
+#   var_name = "o2",
+#   env_label = "Dissolved oxygen",
+#   unit = "μmol/L",
+#   lon_range,
+#   lat_range,
+#   width = 8,
+#   height = 5
+# )
+```
+
+## 3.2 Create temporally-binned temperature for each depth layer ##
+Before predicting vertical distributions across space and time, clim_bin() calculates the average climate value at each depth layer of each predicted suitable pixel in each temporal bin (derived from TB_sdm).
+```{r clim_bin,cache=TRUE}
+## Collect predicted binary maps of each temporal bin (here, quarters)
+quarter_files<-c(
+  Q1="F:/whaleshark_sdm/result_sdm/Q1/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q2="F:/whaleshark_sdm/result_sdm/Q2/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q3="F:/whaleshark_sdm/result_sdm/Q3/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q4="F:/whaleshark_sdm/result_sdm/Q4/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif")
+presence_tif <- lapply(quarter_files, raster)
+save_path<-"F:/whaleshark_sdm/4D"
+## Here I orginally downloaded temperature data for three water columns: 0-200m, 200-400m, 400-1050m. But clim_bin() was only run for the second column as an example.
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_tif, time_type = "quarter",
+           save_path, hemisphere = "north", na_value = -9999)
+#### For other water columns, run the following codes.
+# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
+# clim_bin(temp_nc, presence_tif, time_type = "quarter",
+#         save_path, hemisphere = "north", na_value = -9999)
+# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
+# clim_bin(temp_nc, presence_tif, time_type = "quarter",
+#         save_path, hemisphere = "north", na_value = -9999)
+
+```
+
+## 3.3 Calculate TD and PD for each temporal bin with TB_depth() ######
+TB_depth() calculates tolerable depths (TD) and preferred depths (PD) in each pixel for each temporal bin by comparing TCR and PCR, respectively, with the climate value along the vertical gradient. It outputs three statistics (minimum, maximum, range) for TD and PD and plots the vertical climate profile for a random sample (default, 100) of grids.
+```{r TB_depth(),cache=FALSE}
+##### Example shown with estimates based on tag data
+df<-read.csv("F:/whaleshark_sdm/temp_fit/tag/summary_niche_fit.csv")
+PTR<-df[2:3,2] # preferred temperature range
+TTR<-df[4:5,2] # tolerable temperature range
+temp_bin_path<-"F:/whaleshark_sdm/4D"
+save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## for Preferred Depth (PD)
+save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## for Tolerable Depth (TD)
+## Here only estimation for Preferred Depth (PD) was run
+TPD_quarter<-TB_depth(temp_bin_path, PTR, time_type = "quarter", layer_option="top",
+                      save_path_TPD, na_value = -9999, use_makima = TRUE, N_cells = 50)
+## For Tolerable Depth, run the following code:
+# TTD_quarter<-TB_depth(temp_bin_path, TTR, time_type = "quarter", layer_option="top",
+#                      save_path_TTD, na_value = -9999, use_makima = TRUE, N_cells = 50)
+```
+
+## 3.4 Plot habitat volume and area with plot_stat_4D() ##############
+plot_stat_4D() maps the statistics (Max, Min, Range) of TD and PD across predicted 2D presence maps, generates boxplots, and tests for significant differences among temporal bins using Kruskal Wallis followed by Dunn’s post-hoc tests. It also calculates the total suitable habitat volume based on the TD or PD, and estimates total suitable habitat area based on the 2D presence map of each temporal bin. 
+
+### 3.4.1 Plot TD and PD and estimate the habitat volume for each quarter
+```{r plot_stat_4D,cache=TRUE}
+## Since TTD_quarter was not run in this vignette, I manually load the input data I already prepared when writing the paper.
+TPD_quarter<-list(
+  "F:/whaleshark_sdm/4D/TPD/Q1/Q1_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q1/Q1_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q1/Q1_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_depth_range.asc"
+)
+TTD_quarter<-list(
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_depth_range.asc"
+)
+save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## for Preferred Depth (PD)
+save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## for Tolerable Depth (TD)
+volum_TPD<-plot_stat_4D(TPD_quarter, save_path_TPD)
+volum_TTD<-plot_stat_4D(TTD_quarter, save_path_TTD)
+volum_TPD$volum$Group<-"PD"
+volum_TTD$volum$Group<-"TD"
+volum<-rbind(volum_TPD$volum,volum_TTD$volum)
+str(volum)
+volum$Volume<-volum$Volume/1e15 # for plotting purpose
+print(volum)
+#
+volum$Temporal_bin <- factor(volum$Temporal_bin, levels = c("Q1", "Q2", "Q3", "Q4"))
+```
+
+### 3.4.2 Calculate the area of the predicted 2D map in each temporal bin ###########
+```{r calculate_2D_3D_habitat,cache=TRUE}
+## load the predicted 2D map of each quarter (derived by TB_sdm)
+quarter_files<-c(
+  Q1="F:/whaleshark_sdm/result_sdm/Q1/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q2="F:/whaleshark_sdm/result_sdm/Q2/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q3="F:/whaleshark_sdm/result_sdm/Q3/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif",
+  Q4="F:/whaleshark_sdm/result_sdm/Q4/Ensemble/SUP/MAX_TSS/Rhincodon_typus.tif")
+presence_tif <- lapply(quarter_files, raster::raster)
+## Define Mollweide projection (equal-area, units: meters)
+moll_crs <- "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+Temporal_bin <- c("Q1", "Q2", "Q3", "Q4")
+## Store area (square kilometers)
+area_km2 <- numeric(4)
+
+for (i in 1:4) {
+  r <- presence_tif[[i]]
+
+  # Project to Mollweide (use nearest neighbour for binary data)
+  r_proj <- projectRaster(r, crs = moll_crs, method = "ngb")
+
+  # Extract cells with value 1
+  cells_1 <- which(values(r_proj) == 1)
+
+  # Cell area in square meters = xres * yres
+  cell_area_m2 <- xres(r_proj) * yres(r_proj)
+
+  # Total area in square kilometers
+  total_area_km2 <- length(cells_1) * cell_area_m2 / 1e6
+
+  area_km2[i] <- total_area_km2
+}
+
+## Create result data frame
+volum_area <- data.frame(Temporal_bin = Temporal_bin, Area_km2 = area_km2/1e7)
+print(volum_area)
+volum_area$Temporal_bin <- factor(volum_area$Temporal_bin, levels = c("Q1", "Q2", "Q3", "Q4"))
+```
+
+### 3.4.3 Plot the habitat volume and area into a single figure
+```{r comp_2D_3D_habitat,cache=TRUE}
+## Create a barplot for the habitat volume estimated by TD and PD, respectively
+p<-ggplot(volum, aes(x = Temporal_bin, y = Volume, fill = Group)) +
+  geom_col(position = position_dodge(0.9), width = 0.7) +
+  labs(x = "Quarters", y = expression(Volume~(10^9~km^3)), fill = "Group") +
+  theme_minimal() +
+  theme_classic()
+
+## Combine volume and area plots
+
+# Ensure Temporal_bin is an ordered factor (in the order Q1, Q2, Q3, Q4)
+
+volum$Temporal_bin <- factor(volum$Temporal_bin, levels = c("Q1", "Q2", "Q3", "Q4"))
+
+volum_area$Temporal_bin <- factor(volum_area$Temporal_bin, levels = c("Q1", "Q2", "Q3", "Q4"))
+
+# Merge area data into the main dataset (for plotting)
+
+volum_area_matched <- volum_area %>%
+  right_join(volum %>% select(Temporal_bin) %>% distinct(), by = "Temporal_bin")
+
+# Calculate the range of Volume (for automatic scaling of Area_km2)
+
+vol_range <- range(volum$Volume, na.rm = TRUE)
+area_range <- range(volum_area_matched$Area_km2, na.rm = TRUE)
+
+# Scaling Factor: The numerical range mapping Area_km2 to Volume
+
+# Mapping formula: area_scaled = (Area_km2 - area_min) / (area_max - area_min) * (vol_max - vol_min) + vol_min
+area_min <- area_range[1]
+area_max <- area_range[2]
+vol_min <- vol_range[1]
+vol_max <- vol_range[2]
+
+# Avoid division by zero (if the area range is too small)
+
+if (area_max == area_min) {
+  scaling_factor <- 1
+  offset <- 0
+} else {
+  scaling_factor <- (vol_max - vol_min) / (area_max - area_min)
+  offset <- vol_min - scaling_factor * area_min
+}
+
+# Add a column for the scaled area
+
+volum_area_matched$Area_scaled <- volum_area_matched$Area_km2 * scaling_factor + offset
+
+# Draw a grouped bar chart
+
+p <- ggplot(volum, aes(x = Temporal_bin, y = Volume, fill = Group)) +
+  geom_col(position = position_dodge(0.9), width = 0.7) +
+
+  # Add data for the second y-axis (line + points)
+
+  geom_line(
+    data = volum_area_matched,
+    aes(x = Temporal_bin, y = Area_scaled, group = 1),
+    color = "red", size = 1,
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = volum_area_matched,
+    aes(x = Temporal_bin, y = Area_scaled),
+    color = "red", size = 3,
+    inherit.aes = FALSE
+  ) +
+
+  # Set the left y-axis (Volume) and the right y-axis (Area_km2)
+
+  scale_y_continuous(
+    name = expression(Volume~(10^9~km^3)),
+    sec.axis = sec_axis(
+      ~ (. - offset) / scaling_factor,
+      name = expression(Area~(10^7~km^2))
+    )
+  ) +
+
+  labs(x = "Quarters", fill = "Group") +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(),
+    axis.title.y.right = element_text(color = "red"),
+    axis.text.y.right = element_text(color = "red")
+  )
+
+p
+# ggsave(
+#   filename = "F:/whaleshark_sdm/figures/TB_volume_area.tif",
+#   plot = p,
+#   device = "tiff",
+#   dpi = 300,
+#   compression = "lzw",
+#   width = 6,
+#   height = 6
+# )
+
+```
+
+# References
+
+Andrade, A. F. A. de, Velazco, S. J. E., & De Marco Júnior, P. (2020). ENMTML: An R package for a straightforward construction of complex ecological niche models. Environmental Modelling & Software, 125, 104615. https://doi.org/10.1016/j.envsoft.2019.104615
+
+Andrzejaczek, S., Gleiss, A. C., Pattiaratchi, C. B., & Meekan, M. G. (2019). Patterns and drivers of vertical movements of the large fishes of the epipelagic. Reviews in Fish Biology and Fisheries, 29(2), 335–354. https://doi.org/10.1007/s11160-019-09555-1
+
+Arrowsmith, L., Sequeira, A., Pattiaratchi, C., & Meekan, M. (2021). Water temperature is a key driver of horizontal and vertical movements of an ocean giant, the whale shark Rhincodon typus. Marine Ecology Progress Series, 679, 101–114. https://doi.org/10.3354/meps13899
+
+Braun, C. D., Della Penna, A., Arostegui, M. C., Afonso, P., Berumen, M. L., Block, B. A., Brown, C. A., Fontes, J., Furtado, M., Gallagher, A. J., Gaube, P., Golet, W. J., Kneebone, J., Macena, B. C. L., Mucientes, G., Orbesen, E. S., Queiroz, N., Shea, B. D., Schratwieser, J., … Thorrold, S. R. (2023). Linking vertical movements of large pelagic predators with distribution patterns of biomass in the open ocean. Proceedings of the National Academy of Sciences, 120(47), e2306357120. https://doi.org/10.1073/pnas.2306357120
+
+Coffey, D. M., Carlisle, A. B., Hazen, E. L., & Block, B. A. (2017). Oceanographic drivers of the vertical distribution of a highly migratory, endothermic shark. Scientific Reports, 7(1), 10434. https://doi.org/10.1038/s41598-017-11059-6
+
+Dahms, C., & Killen, S. S. (2023). Temperature change effects on marine fish range shifts: A meta-analysis of ecological and methodological predictors. Global Change Biology, 29(16), 4459–4479. https://doi.org/10.1111/gcb.16770
+
+Dobson, R., Challinor, A. J., Cheke, R. A., Jennings, S., Willis, S. G., & Dallimer, M. (2023). dynamicSDM: An R package for species geographical distribution and abundance modelling at high spatiotemporal resolution. Methods in Ecology and Evolution, 14(5), 1190–1199. https://doi.org/10.1111/2041-210X.14101
+
+Hertz, P. E., Huey, R. B., & Stevenson. (1993). Evaluating Temperature Regulation by Field-Active Ectotherms: The Fallacy of the Inappropriate Question | The American Naturalist: Vol 142, No 5. The American Naturalist, 142(5). https://www.journals.uchicago.edu/doi/10.1086/285573
+
+Naimi, B., & Araújo, M. B. (2016). sdm: A reproducible and extensible R platform for species distribution modelling. Ecography, 39(4), 368–375. https://doi.org/10.1111/ecog.01881
+
+Owens, H. L., & Rahbek, C. (2023). voluModel: Modelling species distributions in three-dimensional space. Methods in Ecology and Evolution, 14(3), 841–847. https://doi.org/10.1111/2041-210X.14064
+
+Valle, M., Ramírez-Romero, E., Ibaibarriaga, L., Citores, L., Fernandes-Salvador, J. A., & Chust, G. (2024). Pan-Atlantic 3D distribution model incorporating water column for commercial fish. Ecological Modelling, 490, 110632. https://doi.org/10.1016/j.ecolmodel.2024.110632

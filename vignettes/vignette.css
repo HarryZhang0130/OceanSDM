@@ -1,0 +1,29 @@
+/* 调整整个页面的基础字体和行间距 */
+body {
+  font-family: 'Arial', sans-serif; /* 字体 */
+  font-size: 16px;                  /* 基础字体大小 */
+  line-height: 1.6;                 /* 行间距 */
+}
+
+/* 调整一级标题 ( # ) 的样式 */
+h1 {
+  font-size: 28px;                  /* 一级标题字体大小 */
+  color: #333;
+}
+
+/* 调整二级标题 ( ## ) 的样式 */
+h2 {
+  font-size: 24px;
+  color: #666;
+}
+
+/* 调整三级标题 ( ### ) 的样式 */
+h3 {
+  font-size: 20px;
+}
+
+/* 调整段落样式 */
+p {
+  font-size: 16px;
+  line-height: 1.6;
+}

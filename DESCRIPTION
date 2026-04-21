@@ -1,10 +1,12 @@
-Package: Thermal.thresholds
-Title: Temperature Preference and Tolerance Analysis for Pelagic Fish
+Package: OceanSDM
+Title: Predicting suitable habitat volumes for marine species over space and time
 Version: 1.0.0
-Authors@R: person("Xiong", "Zhang", email = "zhangx758@mail.sysu.edu.cn", 
-    role = c("aut", "cre"))
-Description: Analyzes temperature preference ranges for oceanic sharks 
-    using distribution fitting methods.
+Authors@R: c(
+    person("Xiong", "Zhang", email = "zhangx758@mail.sysu.edu.cn", role = c("aut", "cre")),
+    person("Zhenzhen", "Chen", email = "chenzhzh56@mail2.sysu.edu.cn", role = "aut")
+    )
+Description: Integrating the estimation of species realized climatic niche into 
+    SDMs to map vertical distributions of marine species.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -13,9 +15,35 @@ Depends:
     R (>= 4.3.2)
 LazyData: false
 Imports: 
-  fitdistrplus,
-  tidyverse,
-  ggplot2
+  cowplot,
+  tidyr,
+  tseries,
+  dplyr,
+  ggplot2,
+  ggpubr,
+  grid,
+  gridExtra,
+  robis,
+  rgbif,
+  obistools,
+  ncdf4,
+  terra,
+  lubridate,
+  sdm,
+  sf,
+  spThin,
+  stringr,
+  raster,
+  sp,
+  rnaturalearth,
+  rstatix,
+  multcompView,
+  purrr,
+  patchwork,
+  tibble
+Remotes:
+    github::andrefaa/ENMTML,
+    github::andrjohns/boostmath
 Suggests: 
     knitr,
     rmarkdown
