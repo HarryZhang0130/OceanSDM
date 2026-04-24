@@ -1,10 +1,6 @@
 Package: OceanSDM
 Title: Predicting suitable habitat volumes for marine species over space and time
 Version: 1.0.0
-Authors@R: c(
-    person("Xiong", "Zhang", email = "zhangx758@mail.sysu.edu.cn", role = c("aut", "cre")),
-    person("Zhenzhen", "Chen", email = "chenzhzh56@mail2.sysu.edu.cn", role = "aut")
-    )
 Description: Integrating the estimation of species realized climatic niche into 
     SDMs to map vertical distributions of marine species.
 License: GPL (>= 3)
