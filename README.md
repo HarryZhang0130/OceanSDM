@@ -1,12 +1,8 @@
 ---
 title: "README"
 output: html_document
-date: "2026-04-22"
+date: "2026-07-01"
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
  <!-- README.Rmd is compiled to README.md, which is displayed on GitHub -->
   
@@ -37,7 +33,7 @@ For detailed tutorials and case studies, see the package vignette:
 ```{r}
 vignette("myutils", package = "OceanSDM")
 ```
-Or view online: [OceanSDM Vignette](https://harryzhang0130.github.io/OceanSDM/docs/myutils.html)
+Or view the pdf: [OceanSDM Vignette](https://github.com/HarryZhang0130/OceanSDM/OceanSDM_mannual.pdf)
 
 ## Functions
 
