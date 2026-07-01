@@ -2,11 +2,14 @@
 % Please edit documentation in R/TB_rescur.R
 \name{TB_rescur}
 \alias{TB_rescur}
-\title{Plot response curves panel (applicable for any number of time periods)}
+\title{Plot response curves panel from CSV files for multiple time periods}
 \usage{
 TB_rescur(
-  model_list,
+  root_path,
+  time_type = "quarter",
+  time_folders = NULL,
   time_names = NULL,
+  file_name = "rcurve.csv",
   colors = NULL,
   ncol = 4,
   nrow = NULL,
@@ -18,17 +21,23 @@ TB_rescur(
 )
 }
 \arguments{
-\item{model_list}{Named list. Contains model results for each time period,
-e.g., \code{list(Quarter1 = sdm_q1, Quarter2 = sdm_q2, ...)}. Each element must
-contain a data frame \code{res_cur} with columns: \code{variable}, \code{Value}, \code{Response},
-\code{lower}, \code{upper}.}
+\item{root_path}{Character. Path to the root directory containing time period subfolders.}
 
-\item{time_names}{Character vector. Names of time periods, e.g.,
-\code{c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")}.}
+\item{time_type}{Character. Type of time periods: "quarter", "month", "season".
+Default "quarter". Ignored if \code{time_folders} is provided.}
+
+\item{time_folders}{Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
+If provided, overrides \code{time_type}.}
+
+\item{time_names}{Optional character vector of labels for the time periods
+(used in legend). Default uses folder names.}
+
+\item{file_name}{Character. Name of the response curve CSV file within each
+subfolder (e.g., "rcurve.csv"). Default: "rcurve.csv".}
 
 \item{colors}{Optional character vector of colors, length equal to number of
-time periods. Defaults to \code{RColorBrewer::brewer.pal(3, "Set3")} (or rainbow
-if more than 12).}
+time periods. Defaults to \code{grDevices::hcl.colors()} with palette "Set3"
+(or \code{rainbow} if more than 12).}
 
 \item{ncol}{Integer. Number of columns in the panel. Default: 4.}
 
@@ -47,28 +56,10 @@ in the last panel) or \code{"bottom"} (unified legend at the bottom). Default: \
 the plot is not saved.}
 }
 \value{
-A combined \code{ggplot} object (patchwork or cowplot).
+A combined \code{ggplot} object (cowplot::ggdraw).
 }
 \description{
-Plot response curves panel (applicable for any number of time periods)
-}
-\examples{
-\donttest{
-# Prepare model list (four quarters) containing the model object produced by TB_sdm()
-model_list <- list(
-  Q1 = sdm_q1,
-  Q2 = sdm_q2,
-  Q3 = sdm_q3,
-  Q4 = sdm_q4
-)
-
-# Time period names
-time_names <- c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")
-
-# Plot response curves panel (vertical stacked legend)
-res_plot <- TB_rescur(model_list,
-                      time_names = time_names,
-                      legend_position = "vertical",
-                      save_path = "response_curves.tif")
-}
+This function reads response curve CSV files from subfolders of a root
+directory, where each subfolder corresponds to a time period (e.g., Q1, Q2, etc.).
+Each CSV file must contain columns: 'variable', 'Value', 'Response', 'lower', 'upper'.
 }

@@ -1,0 +1,11 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>ensemble_habitat_suitability_SUP</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">0.8661647439003</MDI>
+      <MDI key="STATISTICS_MEAN">-9999</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.02267730794847</MDI>
+      <MDI key="STATISTICS_STDDEV">-9999</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

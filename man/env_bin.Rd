@@ -50,26 +50,9 @@ atmospheric seasonality. Default is \code{76} if missing.}
 }
 \value{
 No return value. The function writes raster files (ASCII format) to
-the directory specified by \code{out_dir}. Files are named according to the
-temporal bin (e.g., \code{Jan_thetao_mean.asc}, \code{Q1_thetao_mean.asc},
-\code{Spring_thetao_mean.asc}).
+subdirectories of \code{out_dir} (e.g., \code{out_dir/Jan/thetao_mean.asc},
+\code{out_dir/Q1/thetao_mean.asc}, \code{out_dir/Spring/thetao_mean.asc}).
 }
 \description{
 Create temporally binned predictor layer according to species traits
-}
-\examples{
-\donttest{
-env_bin(
-  sp_trait = "pelagic",
-  env_path = "F:/whaleshark_sdm/cmems/IndoWPac_temp_400m_y2015_y2024.nc",
-  out_dir = "F:/whaleshark_sdm/bin",
-  var_name = "thetao_mean",
-  lon_min = 100, lon_max = 130,
-  lat_min = 15, lat_max = 30,
-  date_min = lubridate::ymd(19930101),
-  date_max = lubridate::ymd(20221201),
-  lag_days = 50,
-  temporal_bin = "seasonal"
-)
-}
 }

@@ -1,0 +1,11 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>Presence_SUP_MAXTSS</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">20.054946899414</MDI>
+      <MDI key="STATISTICS_MEAN">-9999</MDI>
+      <MDI key="STATISTICS_MINIMUM">8.6523914337158</MDI>
+      <MDI key="STATISTICS_STDDEV">-9999</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

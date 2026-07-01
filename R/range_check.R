@@ -29,9 +29,13 @@
 #'
 #' @examples
 #' \donttest{
+#' get_shape_path <- function() {
+#' system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
+#' }
+#' shp_path <- get_shape_path()
 #' result <- range_check(
 #'   occ_path = "F:/occurrences.csv",
-#'   range_path = "F:/iucn_ranges.shp",
+#'   range_path = shp_path,
 #'   buffer_km = 100,
 #'   distshore_km = 10,
 #'   min_points = 100

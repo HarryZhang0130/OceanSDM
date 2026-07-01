@@ -6,7 +6,7 @@ Description: Integrating the estimation of species realized climatic niche into
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Depends: 
     R (>= 4.3.2)
 LazyData: false
@@ -16,12 +16,8 @@ Imports:
   tseries,
   dplyr,
   ggplot2,
-  ggpubr,
-  grid,
-  gridExtra,
   robis,
   rgbif,
-  obistools,
   ncdf4,
   terra,
   lubridate,
@@ -35,13 +31,9 @@ Imports:
   rstatix,
   multcompView,
   purrr,
-  patchwork,
+  pbapply,
   tibble
-Remotes:
-    github::andrefaa/ENMTML,
-    github::andrjohns/boostmath
 Suggests: 
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-URL: https://harryzhang0130.github.io/OceanSDM/

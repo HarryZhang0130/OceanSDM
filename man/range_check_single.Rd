@@ -9,47 +9,57 @@ range_check_single(
   occ_data,
   range_path,
   buffer_km = 100,
-  distshore_km = 10
+  plot = FALSE,
+  plot_file = NULL,
+  xlim = NULL,
+  ylim = NULL
 )
 }
 \arguments{
 \item{species_name}{Character. Scientific name of the species.}
 
-\item{occ_data}{Data frame. Occurrence data with columns \code{decimalLongitude},
-\code{decimalLatitude}, and other optional columns (e.g., Species, year, month).}
+\item{occ_data}{Either a data frame with columns \code{decimalLongitude}, \code{decimalLatitude},
+or a character string path to a CSV file containing those columns.}
 
 \item{range_path}{Character. Path to the range map shapefile (must contain a column \code{sci_name}).}
 
 \item{buffer_km}{Numeric. Buffer distance (km) around the range map to consider
 points as valid (default: 100).}
 
-\item{distshore_km}{Numeric. Distance to shore (km) used to exclude points
-that are on land (default: 10).}
+\item{plot}{Logical. If \code{TRUE}, generate a map showing point categories. Default \code{FALSE}.}
+
+\item{plot_file}{Character. Optional file path to save the plot as TIFF (e.g., "plot.tif").
+If \code{NULL}, the plot is displayed in the graphics device.}
+
+\item{xlim}{Numeric vector of length 2 (min, max) for longitude limits. If \code{NULL},
+automatically determined from the buffered range.}
+
+\item{ylim}{Numeric vector of length 2 (min, max) for latitude limits. If \code{NULL},
+automatically determined from the buffered range.}
 }
 \value{
 A list with elements:
-\item{valid_points}{Data frame of points that passed all checks.}
-\item{invalid_points}{Data frame of points that failed the checks.}
+\item{valid_points}{Data frame of points that passed the checks (within buffer or corrected).}
+\item{invalid_points}{Data frame of points that failed all checks.}
+\item{correction_log}{Data frame with original and corrected coordinates for points that were fixed.}
 \item{error}{Character string with error message if any, otherwise \code{NULL}.}
 }
 \description{
 Check if occurrences of a single species fall within a defined range map with a buffer
 }
 \details{
-The function performs three steps:
+The function performs two steps:
 \enumerate{
 \item Check if points are within the buffered range map.
 \item For points outside the buffer, try four sign combinations of coordinates.
-\item Remove points that fall on land (using \code{obistools::lookup_xy}).
+If \code{plot = TRUE}, a map is generated showing:
 }
-}
-\examples{
-\donttest{
-# Assume `occ` is a data frame with decimalLongitude, decimalLatitude columns
-occ<-read.csv("F:/whaleshark_sdm/occ/R_typus_adj.csv")
-result <- range_check_single("Rhincodon typus",
-                             occ,
-                             "F:/whaleshark_sdm/range_map/R_typus_wip2.shp",
-                              buffer_km = 100)
+\itemize{
+\item Black: valid points (no correction)
+\item Red: original coordinates of corrected points
+\item blue: corrected coordinates
+\item Yellow: invalid points (still outside buffer after corrections)
+\item Grey80 background: land polygons
+The original species range polygon is shown as a red dashed border.
 }
 }

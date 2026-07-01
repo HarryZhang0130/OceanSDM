@@ -15,13 +15,11 @@ bias_reduce(
 }
 \arguments{
 \item{occ_data}{Data frame. Species occurrence records. Must contain columns:
-"Species", "x", "y", "year", "month", "day".}
+"species", "x", "y", "year", "month", "day".}
 
-\item{bias_result}{"BiasCheckResult" object. The result object returned by
-\code{\link[=bias_check]{bias_check()}}.}
+\item{bias_result}{"BiasCheckResult" object. The result object returned by bias_check.}
 
-\item{min_dist_km}{Numeric. Minimum distance (in kilometres) used in
-\code{\link[spThin:thin]{spThin::thin()}} for spatial thinning.}
+\item{min_dist_km}{Numeric. Minimum distance (in kilometres) used for spatial thinning.}
 
 \item{thin_reps}{Integer. Number of replicate thinning runs.}
 

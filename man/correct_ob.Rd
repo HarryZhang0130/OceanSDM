@@ -5,46 +5,48 @@
 \title{Correct occurrence coordinates based on a standard raster layer of the predictor dataset}
 \usage{
 correct_ob(
-  occurrence_data,
+  occ_path,
   predictor_raster_path,
   max_distance_km = 10,
   out_dir,
-  verbose = TRUE
+  verbose = TRUE,
+  plot = FALSE,
+  plot_file = NULL,
+  xlim = NULL,
+  ylim = NULL
 )
 }
 \arguments{
-\item{occurrence_data}{Data frame. Occurrence data to be corrected. Must contain
+\item{occ_path}{Character. Path to occurrence CSV file. Must contain
 columns \code{decimalLongitude} and \code{decimalLatitude} (WGS84 coordinates).}
 
 \item{predictor_raster_path}{Character. File path to the standard raster layer
 (e.g., an ASCII or GeoTIFF file) used as reference for correction.}
 
 \item{max_distance_km}{Numeric. Maximum distance (in kilometres) that a point
-will be adjusted to the nearest grid cell with non‑\code{NA} value. Default is \code{10}.}
+will be adjusted to the nearest grid cell with non-\code{NA} value. Default is \code{10}.}
 
-\item{out_dir}{Character. Directory path (including file name) where the corrected
-occurrence data will be saved as a CSV file.}
+\item{out_dir}{Character. \strong{Full file path} (including \code{.csv} extension) where
+the corrected occurrence data will be saved. If the directory does not exist,
+it will be created. If a directory path is given instead, a default filename
+\code{corrected_occurrences.csv} will be appended.}
 
 \item{verbose}{Logical. If \code{TRUE}, print progress messages. Default is \code{TRUE}.}
+
+\item{plot}{Logical. If \code{TRUE}, generate a map showing correction status. Default \code{FALSE}.}
+
+\item{plot_file}{Character. Optional file path to save the plot as TIFF (e.g., "plot.tif").
+If \code{NULL}, the plot is displayed in the graphics device.}
+
+\item{xlim}{Numeric vector of length 2 (min, max) for longitude limits. If \code{NULL},
+automatically determined from the raster extent.}
+
+\item{ylim}{Numeric vector of length 2 (min, max) for latitude limits. If \code{NULL},
+automatically determined from the raster extent.}
 }
 \value{
-A data frame (invisibly) with the corrected occurrences. The returned
-data frame includes additional columns: \code{original_x}, \code{original_y},
-\code{correction_status} (\code{"original"}, \code{"corrected"}, or \code{"removed"}),
-\code{correction_distance_km}, \code{correction_x}, \code{correction_y}, and \code{temperature}.
-The function also writes a CSV file to \code{out_dir}.
+A data frame (invisibly) with the corrected occurrences.
 }
 \description{
 Correct occurrence coordinates based on a standard raster layer of the predictor dataset
-}
-\examples{
-\donttest{
-corrected_ob <- correct_ob(
-  occurrence_data = final_combined_data,
-  predictor_raster_path = "C:/shark/bin/Q1_thetao_mean.asc",
-  max_distance_km = 10,
-  out_dir = "F:/shark/occ/R_typus_adj.csv",
-  verbose = TRUE
-)
-}
 }

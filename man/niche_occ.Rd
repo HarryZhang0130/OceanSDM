@@ -61,8 +61,9 @@ A list containing:
 \item{unit}{Unit of the variable}
 }
 \description{
-Extracts environmental values (e.g., temperature, dissolved oxygen) from raster layers
-at occurrence points, then estimates optimal value, preference range, and tolerance range.
+Extracts environmental values (e.g., temperature, dissolved oxygen)
+from raster layers at occurrence points, then estimates optimal value,
+preference range, and tolerance range.
 }
 \examples{
 \donttest{
@@ -71,8 +72,8 @@ niche_occ(
   env_path = "F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2015_y2024.nc",
   toler_quantiles = c(0.01, 0.99),
   pref_method = "FWHM",
-  pref_quantiles =NULL,
-  save_path = "F:/whaleshark_sdm/temp_fit/habitat"
+  pref_quantiles = NULL,
+  save_path = "F:/whaleshark_sdm/temp_fit/habitat",
   min_year = 2015,
   var_name = "thetao_mean",
   env_label = "Temperature",

@@ -440,7 +440,9 @@ niche_tag <- function(
                     width = width, height = height, units = "in", res = 300, compression = "lzw")
     print(plot.niche_range(result))
     grDevices::dev.off()
-    utils::write.csv(summary_df, paste0(save_path, "/summary_niche_fit.csv"), row.names = FALSE)
+    utils::write.csv(summary_df[, c("parameter", "value")],
+                     paste0(save_path, "/summary_niche_fit.csv"),
+                     row.names = FALSE)
   }
 
   return(result)

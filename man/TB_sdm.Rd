@@ -2,98 +2,116 @@
 % Please edit documentation in R/TB_sdm.R
 \name{TB_sdm}
 \alias{TB_sdm}
-\title{Building SDM for each temporal bin and create related figures}
+\title{Build Species Distribution Model using \code{sdm} and \code{blockCV} for spatial cross-validation}
 \usage{
 TB_sdm(
   env_path,
-  prj_path = NULL,
   occ_path,
-  eval_occ = NULL,
   res_path,
   species,
   x,
   y,
-  colin_var,
-  sp_accessible_area,
-  pseudoabs_method,
-  pres_abs_ratio,
-  part,
-  algorithm,
-  thr,
-  ensemble
+  pre_abs_ratio = 1,
+  collinearity_thresh = 0.7,
+  remove_collinear = FALSE,
+  block_size = NULL,
+  algorithms = c("glm", "gam", "brt", "rf", "svm"),
+  cv_method = "random",
+  n_folds = 5,
+  var.importance = TRUE,
+  response.curve = TRUE,
+  ensemble.method = "weighted",
+  ensemble.stat = "AUC",
+  expr = "auc > 0.8 & tss > 0.6",
+  ncore = 1,
+  seed = 123,
+  proj_path = NULL
 )
 }
 \arguments{
-\item{env_path}{character. Directory path to the environmental predictors used to calibrate the model.}
+\item{env_path}{character. Directory containing environmental rasters (.asc or .tif).}
 
-\item{prj_path}{character. Directory path to the environmental predictors used to project the distribution
-in another temporal or spatial extents. At least two separated folders for different scenarios.}
+\item{occ_path}{character. Path to occurrence file (tab‑delimited).}
 
-\item{occ_path}{character. Directory path to occurrence table (tab-delimited text).}
+\item{res_path}{character. Output directory.}
 
-\item{eval_occ}{character. Directory path to independent occurrence data for testing the model.}
+\item{species}{character. Column name for species (not used, kept for compatibility).}
 
-\item{res_path}{character. Directory path to store the model results.}
+\item{x}{character. Column name for longitude.}
 
-\item{species}{character. Name of the column of species name in the occurrence table.}
+\item{y}{character. Column name for latitude.}
 
-\item{x}{character. Name of the column of longitude in the occurrence table.}
+\item{pre_abs_ratio}{numeric. Ratio of presences to pseudo-absences points.}
 
-\item{y}{character. Name of the column of latitude in the occurrence table.}
+\item{collinearity_thresh}{numeric. Correlation threshold.}
 
-\item{colin_var}{character. Method to reduce variable collinearity (default NULL). See ENMTML package.}
+\item{remove_collinear}{logical. Remove correlated variables.}
 
-\item{sp_accessible_area}{character. Restrict for each species the accessible area (default NULL,
-all spatial extent defined by the environmental layer will be used). See ENMTML.}
+\item{block_size}{numeric. Block size (unit: meters) can be user defined if you did not want to find it through the time-consuming auto-process based on Moran's I curve}
 
-\item{pseudoabs_method}{character. Pseudo-absence allocation method. See ENMTML documentation for details.}
+\item{algorithms}{character vector. sdm methods.}
 
-\item{pres_abs_ratio}{numeric. Presence-Absence ratio (values between 0 and 1).}
+\item{cv_method}{character. type of assignment of spatial blocks into folds. Can be random (default), systematic, or checkerboard.}
 
-\item{part}{character. Partition method for model's validation. Only one method can be chosen.}
+\item{n_folds}{integer. Number of folds for spatial cross-validation.}
 
-\item{algorithm}{character. Algorithm(s) to construct ecological niche models. See ENMTML.}
+\item{var.importance}{logical.}
 
-\item{thr}{character. Threshold(s) used for presence-absence predictions. See ENMTML.}
+\item{response.curve}{logical.}
 
-\item{ensemble}{character. Method(s) used to ensemble different algorithms. See ENMTML.}
+\item{ensemble.method}{character. "weighted" or "unweighted".}
+
+\item{ensemble.stat}{character. "AUC" or "TSS".}
+
+\item{expr}{character. Select which models will be used for ensemble based on AUC and/or TSS, e.g. expr = 'auc > 0.8 & tss > 0.6'.}
+
+\item{ncore}{integer. Number of cores.}
+
+\item{seed}{integer. Random seed.}
+
+\item{proj_path}{character. Optional projection rasters directory.}
+
+\item{max_dist}{numeric. Maximum distance (unit: meters) to be used in calculating Moran's I. Default is NULL}
 }
 \value{
 A list containing:
-\item{var_imp}{Data frame of variable importance across algorithms.}
-\item{var_plot}{ggplot2 object of variable importance boxplot.}
-\item{res_cur}{Data frame of response curve data (from sdm::rcurve).}
-\item{rcur_plot}{List of response curve plots (from sdm::rcurve).}
+\item{final_model}{A final sdm model object}
+\item{ensemble}{Raster object of the predicted habitat suitability by the ensemble model}
+\item{evaluation}{Model evaluation table}
+\item{var_imp}{Variable importance table}
+\item{response_curves}{Data frame of response curve data (from sdm::rcurve)}
+\item{optimal_block}{Identified optimal block size}
+\item{collinearity_report}{Collinearity analysis report}
 }
 \description{
-Building SDM for each temporal bin and create related figures
+Build Species Distribution Model using \code{sdm} and \code{blockCV} for spatial cross-validation
 }
 \examples{
 \donttest{
-# Define paths for environmental predictors, projection, occurrences, and results
 d_env <- "F:/whaleshark_sdm/bin/Q1"
 d_prj <- "F:/whaleshark_sdm/bin/proj"
 d_occ <- "F:/whaleshark_sdm/occ/R_typus_q1.txt"
 d_res <- "F:/whaleshark_sdm/result_sdm/Q1"
-
-# Run SDM for the first quarter
 sdm_q1 <- TB_sdm(
   env_path = d_env,
-  prj_path = d_prj,
   occ_path = d_occ,
-  eval_occ = NULL,
   res_path = d_res,
   species = "Species",
   x = "x",
   y = "y",
-  colin_var = NULL,
-  sp_accessible_area = NULL,
-  pseudoabs_method = c(method = "ENV_CONST"),
-  pres_abs_ratio = 0.3,
-  part = c(method = "BLOCK"),
-  algorithm = c("BRT", "SVM", "RDF", "MXD"),
-  thr = c(type = "MAX_TSS"),
-  ensemble = c(method = "SUP", metric = "TSS")
-)
+  pre_abs_ratio = 1,
+  collinearity_thresh = 0.7,
+  remove_collinear = TRUE,
+  algorithms = c("brt", "rf", "maxent", "svm"),
+  cv_method = "random",
+  n_folds = 5,
+  var.importance = TRUE,
+  response.curve = TRUE,
+  ensemble.method = "weighted",
+  ensemble.stat = "TSS",
+  expr = 'auc > 0.8 & tss > 0.6',
+  ncore = 1,
+  seed = 123,
+  proj_path = d_prj)
 }
 }

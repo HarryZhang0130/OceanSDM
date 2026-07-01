@@ -53,8 +53,14 @@ bias_check <- function(occ_data,
                        range_path,
                        prj = "+proj=longlat +datum=WGS84") {
 
+  # ---- Force spherical geometry (s2) for geographic coordinates ----
+  if (!sf::sf_use_s2()) {
+    message("Enabling spherical geometry (s2) for geographic coordinates.")
+    sf::sf_use_s2(TRUE)
+  }
+
   # Check required columns
-  required_cols <- c("Species", "x", "y", "year", "month", "day")
+  required_cols <- c("species", "x", "y", "year", "month", "day")
   if (!all(required_cols %in% colnames(occ_data))) {
     missing_cols <- setdiff(required_cols, colnames(occ_data))
     stop(paste("Missing required columns:", paste(missing_cols, collapse = ", ")))
@@ -77,7 +83,7 @@ bias_check <- function(occ_data,
   if (!"season" %in% colnames(occ_data)) {
     occ_data <- occ_data |>
       dplyr::mutate(date = lubridate::make_date(year, month, day),
-                    adjusted_date = date - lubridate::days(76),  # Adjust for sea temperature lag (73 days)
+                    adjusted_date = date - lubridate::days(76),
                     adjusted_month = lubridate::month(adjusted_date),
                     hemisphere = ifelse(y >= 0, "Northern", "Southern"),
                     season = dplyr::case_when(
@@ -95,7 +101,7 @@ bias_check <- function(occ_data,
   }
 
   ## 2. Parameter validation
-  temporal_level <- match.arg(arg = temporal_level,
+  temporal_level <- match.arg(temporal_level,
                               choices = c("month", "quarter", "season"),
                               several.ok = FALSE)
   spatial_method <- match.arg(spatial_method,
@@ -152,7 +158,7 @@ bias_check <- function(occ_data,
     occ_temp <- occ_data[occ_data[[temporal_level]] == temp_val, ]
     if (nrow(occ_temp) < 3) {
       warning(paste("Time period", temp_val,
-                    "has fewer than 3 occurrence records. Skipping spatial bias test."))
+                    "has fewer than 3 occurrence records. Skipping spatial bias test.\n"))
       next
     }
 
@@ -170,27 +176,26 @@ bias_check <- function(occ_data,
       if (!is.null(world_path) && file.exists(world_path)) {
         worldmap <- sf::st_read(world_path, quiet = TRUE)
         worldmap <- sf::st_transform(worldmap, sf::st_crs(convex_hull))
-        # Check if convex hull intersects land
-        intersection_test <- sf::st_intersects(convex_hull, worldmap, sparse = FALSE)
+        # Check if convex hull intersects land (suppress messages about planar assumption)
+        intersection_test <- suppressMessages(
+          sf::st_intersects(convex_hull, worldmap, sparse = FALSE)
+        )
         if (any(intersection_test)) {
           # Convex hull intersects land, remove land part
           message(paste("Time period", temp_val,
                         ": convex hull intersects land. Removing land portion."))
-          tryCatch({
-            ocean_area <- sf::st_difference(convex_hull, sf::st_union(worldmap))
-            # Check if resulting ocean area is valid
-            if (sf::st_is_empty(ocean_area) || sf::st_area(ocean_area) == 0) {
-              warning(paste("Time period", temp_val,
-                            ": unable to obtain valid ocean area. Using original convex hull."))
-              area <- convex_hull
-            } else {
-              area <- ocean_area
-            }
-          }, error = function(e) {
+          # Use suppressMessages + suppressWarnings to avoid all unwanted output
+          area <- suppressWarnings(
+            suppressMessages(
+              sf::st_difference(convex_hull, sf::st_union(worldmap))
+            )
+          )
+          # Check if resulting ocean area is valid
+          if (sf::st_is_empty(area) || sf::st_area(area) == 0) {
             warning(paste("Time period", temp_val,
-                          ": error during land removal. Using original convex hull. Error:", e$message))
+                          ": unable to obtain valid ocean area. Using original convex hull.\n"))
             area <- convex_hull
-          })
+          }
         } else {
           # No intersection with land, use convex hull directly
           message(paste("Time period", temp_val,
@@ -217,15 +222,15 @@ bias_check <- function(occ_data,
       if (!"sci_name" %in% colnames(range_map)) {
         stop("The range_map must contain a column named 'sci_name'.")
       }
-      species_name <- unique(occ_temp$Species)
+      species_name <- unique(occ_temp$species)
       if (length(species_name) > 1) {
-        warning("Multiple species names found. Using the first one.")
+        warning("Multiple species names found. Using the first one.\n")
         species_name <- species_name[1]
       }
       species_range <- range_map |> dplyr::filter(sci_name == species_name)
       if (nrow(species_range) == 0) {
         warning(paste("Range not found for species", species_name,
-                      ". Using convex hull instead."))
+                      ". Using convex hull instead.\n"))
         points_sf <- sf::st_as_sf(occ_temp, coords = c("x", "y"), crs = prj)
         area <- sf::st_convex_hull(sf::st_union(points_sf))
       } else {
@@ -236,10 +241,23 @@ bias_check <- function(occ_data,
 
     # Ensure points are within the area
     points_sf <- sf::st_as_sf(occ_temp, coords = c("x", "y"), crs = prj)
-    points_in_area <- sf::st_intersection(points_sf, area)
+    # Intersect points with area (suppress messages)
+    points_in_area <- suppressMessages(
+      sf::st_intersection(points_sf, area)
+    )
+    # Convert message to info (not warning)
     if (nrow(points_in_area) < nrow(occ_temp)) {
-      warning(paste("Time period", temp_val, ": some points fall outside the defined area."))
+      message(paste("Time period", temp_val, ": some points fall outside the defined area. They will be excluded from spatial test."))
     }
+
+    # If no points remain after intersection, skip
+    if (nrow(points_in_area) == 0) {
+      warning(paste("Time period", temp_val, ": no valid points inside the area. Skipping spatial test.\n"))
+      next
+    }
+
+    # Use points_in_area for subsequent analysis
+    occ_temp_filtered <- occ_temp[rownames(occ_temp) %in% rownames(points_in_area), ]
 
     # Compute nearest neighbor distances
     if (nrow(points_in_area) >= 2) {
@@ -306,13 +324,13 @@ bias_check <- function(occ_data,
           plot.list[[paste0("Spatial_bias_plot_", temporal_level, "_", temp_val)]] <- spatial_plot
 
         } else {
-          warning(paste("Time period", temp_val, ": insufficient points for t-test."))
+          warning(paste("Time period", temp_val, ": insufficient points for t-test.\n"))
         }
       } else {
-        warning(paste("Time period", temp_val, ": valid area is too small."))
+        warning(paste("Time period", temp_val, ": valid area is too small.\n"))
       }
     } else {
-      warning(paste("Time period", temp_val, ": fewer than 2 valid points in area."))
+      warning(paste("Time period", temp_val, ": fewer than 2 valid points in area.\n"))
     }
   }
 

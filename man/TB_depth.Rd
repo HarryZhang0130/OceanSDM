@@ -13,7 +13,8 @@ TB_depth(
   save_path,
   na_value = -9999,
   use_makima = TRUE,
-  N_cells = 100
+  N_cells = 50,
+  ncores = 1
 )
 }
 \arguments{
@@ -31,10 +32,11 @@ or \code{"bottom"} (deepest). Default is \code{"top"}.}
 
 \item{na_value}{Numeric. Value to replace NA (default: -9999).}
 
-\item{use_makima}{Logical. Whether to use makima interpolation (requires
-\code{boostmath} package). If \code{FALSE} or package not available, falls back to spline.}
+\item{use_makima}{Logical. Whether to use makima interpolation. If \code{FALSE} , falls back to spline.}
 
-\item{N_cells}{Integer. Number of random cells to plot (5–30). If \code{0}, no plot is generated.}
+\item{N_cells}{Integer. Number of random cells to plot (5--30). If \code{0}, no plot is generated.}
+
+\item{ncores}{Integer. Number of cores for parallel processing (uses \code{pbapply}). Default: 1.}
 }
 \value{
 Invisibly returns a character vector of all generated file paths.
@@ -42,14 +44,4 @@ Invisibly returns a character vector of all generated file paths.
 \description{
 Calculate depth range within specified temperature range for each grid cell
 using adaptive interpolation based on temp_bin results
-}
-\examples{
-\donttest{
-# Assuming temp_bin output exists in "path/to/temp_bin"
-TB_depth(temp_bin_path = "path/to/temp_bin",
-         PTR = c(23.5, 30.2), # thermal ranges, unit ℃
-         time_type = "quarter",
-         save_path = "./output",
-         N_cells = 20)
-}
 }

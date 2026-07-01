@@ -1,11 +1,9 @@
 #' Reduce spatial and temporal sampling bias
 #'
 #' @param occ_data Data frame. Species occurrence records. Must contain columns:
-#'   "Species", "x", "y", "year", "month", "day".
-#' @param bias_result "BiasCheckResult" object. The result object returned by
-#'   [bias_check()].
-#' @param min_dist_km Numeric. Minimum distance (in kilometres) used in
-#'   [spThin::thin()] for spatial thinning.
+#'   "species", "x", "y", "year", "month", "day".
+#' @param bias_result "BiasCheckResult" object. The result object returned by bias_check.
+#' @param min_dist_km Numeric. Minimum distance (in kilometres) used for spatial thinning.
 #' @param thin_reps Integer. Number of replicate thinning runs.
 #' @param temporal_level Character. Temporal level used to address temporal
 #'   sampling bias. Must be one of "month", "quarter", or "season".
@@ -36,7 +34,7 @@ bias_reduce <- function(occ_data,
   set.seed(seed)
 
   # 2. Validate input data
-  required_cols <- c("Species", "x", "y", "year", "month", "day", temporal_level)
+  required_cols <- c("species", "x", "y", "year", "month", "day", temporal_level)
   if (!all(required_cols %in% colnames(occ_data))) {
     missing_cols <- setdiff(required_cols, colnames(occ_data))
     stop(paste("Missing required columns:", paste(missing_cols, collapse = ", ")))
@@ -125,7 +123,7 @@ bias_reduce <- function(occ_data,
         }
 
         thin_data <- data.frame(LAT = quarter_data$y, LONG = quarter_data$x,
-                                SPECIES = quarter_data$Species, DATE = quarter_data$date)
+                                SPECIES = quarter_data$species, DATE = quarter_data$date)
         thinned_result <- spThin::thin(loc.data = thin_data, lat.col = "LAT", long.col = "LONG",
                                        spec.col = "SPECIES", thin.par = min_dist_km, reps = thin_reps,
                                        locs.thinned.list.return = TRUE, write.files = FALSE,

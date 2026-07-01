@@ -2,55 +2,60 @@
 % Please edit documentation in R/TB_map.R
 \name{TB_map}
 \alias{TB_map}
-\title{Plot quarterly SDM predictions (probability and binary maps) in a 4x2 layout}
+\title{Plot SDM predictions (probability and binary maps) for multiple time periods}
 \usage{
 TB_map(
   root_path = "F:/whaleshark_sdm/result",
+  time_type = "quarter",
+  time_folders = NULL,
+  time_labels = NULL,
   output_width = 12,
   output_height = 16,
-  output_filename = "sdm_quarterly"
+  output_filename_base = "sdm_plot",
+  split_monthly = TRUE
 )
 }
 \arguments{
-\item{root_path}{Character. Path to the root directory containing Q1, Q2, Q3, Q4 subfolders.
-Default: "F:/whaleshark_sdm/result"}
+\item{root_path}{Character. Path to the root directory containing time period subfolders.}
 
-\item{output_width}{Numeric. Width of the output figure in inches. Default: 12}
+\item{time_type}{Character. Type of time periods: "quarter", "month", "season".
+Default "quarter". Ignored if \code{time_folders} is provided.}
 
-\item{output_height}{Numeric. Height of the output figure in inches. Default: 16}
+\item{time_folders}{Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
+If provided, overrides \code{time_type}.}
 
-\item{output_filename}{Character. Name of the output TIFF file (without extension).
-Default: "sdm_quarterly"}
+\item{time_labels}{Optional character vector of labels for the time periods
+(used in plot row labels). Default uses folder names.}
+
+\item{output_width}{Numeric. Width of the output figure in inches. Default: 12.}
+
+\item{output_height}{Numeric. Height of the output figure (per figure) in inches.
+For monthly splits, each figure will have this height. Default: 16.}
+
+\item{output_filename_base}{Character. Base name for output TIFF files.
+For monthly data, additional suffixes are added. Default: "sdm_plot".}
+
+\item{split_monthly}{Logical. For monthly data, if TRUE (default), split into
+three figures (Jan-Apr, May-Aug, Sep-Dec). If FALSE, produce a single figure
+with 12 rows (very tall).}
 }
 \value{
-No return value. The plot is printed in the current graphics device and
-saved as a TIFF file in \code{root_path}.
+No return value. The plot(s) are displayed and saved as TIFF files in \code{root_path}.
 }
 \description{
-This function reads probability and binary raster files for four quarters (Q1-Q4)
-from a predefined folder structure and creates a 4x2 composite figure. Each quarter
-occupies one row: left column shows the probability map, right column shows the
-binary map. Subplots are labeled a) through h) outside the top-left corner of each
-plot. Legends are combined horizontally below the main grid. The figure is displayed
-in R and saved as a TIFF file with customizable dimensions.
+This function reads probability and binary raster files for a set of time
+periods (e.g., quarters, months, seasons) from a predefined folder structure
+and creates a composite figure. Each time period occupies one row: left column
+shows the probability map, right column shows the binary map. Subplots are
+labeled a) through h) (or up to 24) outside the top-left corner of each plot.
+Legends are combined horizontally below the main grid. For monthly data (12
+months), the function automatically splits into three separate figures, each
+covering four months.
 }
 \details{
-The expected folder structure is:
+Expected folder structure (for a given time period folder, e.g., "Q1"):
 \itemize{
-\item \code{root_path/Q1/Ensemble/SUP/*.tif} (probability map)
-\item \code{root_path/Q1/Ensemble/SUP/MAX_TSS/*.tif} (binary map)
-\item (similar for Q2, Q3, Q4)
-}
-If a directory is missing or contains no .tif file, a warning is issued and a
-placeholder plot is used.
-}
-\examples{
-\dontrun{
-TB_map(
-  root_path = "F:/whaleshark_sdm/result",
-  output_width = 12,
-  output_height = 16，
-  output_filename = "sdm_quarterly"
-)
+\item {root_path}/{period_folder}/predicted_probability.asc   (probability map)
+\item {root_path}/{period_folder}/predicted_presence.asc      (binary map)
 }
 }

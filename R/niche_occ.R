@@ -1,7 +1,8 @@
 #' Estimate preference and tolerance ranges for a species based on occurrence data
 #'
-#' Extracts environmental values (e.g., temperature, dissolved oxygen) from raster layers
-#' at occurrence points, then estimates optimal value, preference range, and tolerance range.
+#' Extracts environmental values (e.g., temperature, dissolved oxygen)
+#' from raster layers at occurrence points, then estimates optimal value,
+#' preference range, and tolerance range.
 #'
 #' @param occ_path character. Path to occurrence file (table with columns: long, lat, year, month).
 #' @param env_path character. Path to NetCDF file containing environmental data (e.g., temperature, DO).
@@ -34,8 +35,8 @@
 #'   env_path = "F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2015_y2024.nc",
 #'   toler_quantiles = c(0.01, 0.99),
 #'   pref_method = "FWHM",
-#'   pref_quantiles =NULL,
-#'   save_path = "F:/whaleshark_sdm/temp_fit/habitat"
+#'   pref_quantiles = NULL,
+#'   save_path = "F:/whaleshark_sdm/temp_fit/habitat",
 #'   min_year = 2015,
 #'   var_name = "thetao_mean",
 #'   env_label = "Temperature",
@@ -61,42 +62,51 @@ niche_occ <- function(
     width = 6,
     height = 5
 ) {
+
   # Match preference method argument
   pref_method <- match.arg(pref_method)
 
   # Read occurrence data
   df <- utils::read.table(occ_path, header = TRUE)
 
+  # Open NetCDF file
   nc <- ncdf4::nc_open(env_path)
+
   df$env_value <- NA
 
   for (i in 1:nrow(df)) {
     # Compute time index (monthly timesteps from min_year)
     j <- (df$year[i] - min_year) * 12 + df$month[i]
+
     # Extract data slice depending on dimensionality
     if (length(dim(ncdf4::ncvar_get(nc, varid = var_name))) == 4) {
-      env_slice <- ncdf4::ncvar_get(nc, varid = var_name)[,, 1, j]  # 4D: lon, lat, depth, time
+      env_slice <- ncdf4::ncvar_get(nc, varid = var_name)[,, 1, j]   # 4D: lon, lat, depth, time
     } else if (length(dim(ncdf4::ncvar_get(nc, varid = var_name))) == 3) {
-      env_slice <- ncdf4::ncvar_get(nc, varid = var_name)[,, j]     # 3D: lon, lat, time
+      env_slice <- ncdf4::ncvar_get(nc, varid = var_name)[,, j]      # 3D: lon, lat, time
     } else {
       stop("Unsupported number of dimensions in NetCDF variable")
     }
 
-    # Create raster from slice
-    env_raster <- raster::raster(t(env_slice),
-                                 xmn = lon_range[1], xmx = lon_range[2],
-                                 ymn = lat_range[1], ymx = lat_range[2])
-    env_raster <- raster::flip(env_raster, direction = 2)
-    raster::projection(env_raster) <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
+    # Create SpatRaster from slice using terra
+    env_raster <- terra::rast(
+      t(env_slice),   # transpose to align with raster convention
+      extent = terra::ext(lon_range[1], lon_range[2], lat_range[1], lat_range[2]),
+      crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
+    )
 
-    # Extract value at occurrence point (column 3 = long, column 2 = lat)
-    df$env_value[i] <- raster::extract(env_raster, df[i, c(3, 2)])
+    # Flip vertically (same as raster::flip(direction=2))
+    env_raster <- terra::flip(env_raster, direction = "vertical")
+
+    # Extract value at occurrence point (columns: long, lat)
+    extracted <- terra::extract(env_raster, df[i, c(3, 2)])
+    df$env_value[i] <- extracted[1, 2]   # first row, second column = value
   }
 
   ncdf4::nc_close(nc)
 
   # Remove NA values
   occ_values <- stats::na.omit(df$env_value)
+
   cat("Summary of extracted", var_name, "values:\n")
   print(summary(occ_values))
 
@@ -120,7 +130,7 @@ niche_occ <- function(
       stats::uniroot(f, interval = c(optimal_value, max(density_df$x)))$root,
       error = function(e) NA
     )
-  } else { # quantile method
+  } else {  # quantile method
     pref_quant <- stats::quantile(occ_values, probs = pref_quantiles, na.rm = TRUE)
     lower_pref <- pref_quant[1]
     upper_pref <- pref_quant[2]
@@ -160,7 +170,7 @@ niche_occ <- function(
   )
   class(result) <- "niche_occ"
 
-  # Define S3 plot method
+  # Define S3 plot method (unchanged, uses ggplot2)
   plot.niche_occ <- function(x, ...) {
     # Extract values
     optimal <- x$summary$value[x$summary$parameter == "optimal_value"]
@@ -213,8 +223,10 @@ niche_occ <- function(
                     width = width, height = height, units = "in", res = 300, compression = "lzw")
     print(plot.niche_occ(result))
     grDevices::dev.off()
-    utils::write.csv(summary_df, paste0(save_path, "/summary_df.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-  }
+    utils::write.csv(summary_df[, c("parameter", "value")],
+                     paste0(save_path, "/summary_niche_fit.csv"),
+                     row.names = FALSE)
+    }
 
   return(result)
 }

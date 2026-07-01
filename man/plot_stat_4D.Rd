@@ -4,16 +4,27 @@
 \alias{plot_stat_4D}
 \title{Plot depth statistics and compute habitat volume (quarterly, monthly, or seasonal)}
 \usage{
-plot_stat_4D(file_list, save_path, time_unit = "quarter")
+plot_stat_4D(
+  file_list,
+  save_path,
+  time_type = "quarter",
+  presence_files = NULL,
+  plot_overlay = TRUE
+)
 }
 \arguments{
-\item{file_list}{Character vector. File paths to raster files. For quarterly/seasonal:
-12 files (Q1_min, Q1_max, Q1_range, Q2_min, ...; or Spring_min, ...).
-For monthly: 36 files (Jan_min, Jan_max, Jan_range, Feb_min, ...).}
+\item{file_list}{Character vector. File paths to raster files.}
 
 \item{save_path}{Character. Directory path to save plots and report.}
 
-\item{time_unit}{Character. One of \code{"quarter"}, \code{"month"}, or \code{"season"} (default: \code{"quarter"}).}
+\item{time_type}{Character. One of \code{"quarter"}, \code{"month"}, or \code{"season"}.}
+
+\item{presence_files}{Character vector (optional). Paths to binary presence rasters.}
+
+\item{plot_overlay}{Logical. Whether to create volume‑area overlay plot.}
+
+\item{map_colors}{Character vector of length 2, specifying low and high colors for depth maps.
+Default: \code{c("lightblue", "darkblue")}.}
 }
 \value{
 A list with the following components:
@@ -21,6 +32,7 @@ A list with the following components:
 \item{depth_range}{Combined plot of range maps (returned by \code{cowplot::plot_grid}).}
 \item{depth_min}{Combined plot of minimum depth maps.}
 \item{depth_max}{Combined plot of maximum depth maps.}
+\item{overlay_plot}{A \code{ggplot} object of the volume‑area overlay plot (if \code{presence_files} provided and \code{plot_overlay = TRUE}), otherwise \code{NULL}.}
 }
 \description{
 Plot depth statistics and compute habitat volume (quarterly, monthly, or seasonal)
@@ -60,14 +72,13 @@ TTD_quarter <- list(
 
 save_path_TPD <- "F:/whaleshark_sdm/4D/TPD"
 save_path_TTD <- "F:/whaleshark_sdm/4D/TTD"
-
+quarter_files<-c(
+  Q1="F:/whaleshark_sdm/result_sdm2/Q1/predicted_presence.asc",
+ Q2="F:/whaleshark_sdm/result_sdm2/Q2/predicted_presence.asc",
+  Q3="F:/whaleshark_sdm/result_sdm2/Q3/predicted_presence.asc",
+  Q4="F:/whaleshark_sdm/result_sdm2/Q4/predicted_presence.asc")
 # Run the function for preferred depth and tolerable depth
-volum_TPD <- plot_stat_4D(TPD_quarter, save_path_TPD, time_unit = "quarter")
-volum_TTD <- plot_stat_4D(TTD_quarter, save_path_TTD, time_unit = "quarter")
-}
-\donttest{
-# Assuming raster files exist in a directory
-file_list <- list.files("path/to/rasters", full.names = TRUE)
-plot_stat_4D(file_list, save_path = "./output", time_unit = "quarter")
+volum_TPD <- plot_stat_4D(TPD_quarter, save_path_TPD, time_type = "quarter",quarter_files)
+volum_TTD <- plot_stat_4D(TTD_quarter, save_path_TTD, time_type = "quarter",quarter_files)
 }
 }
