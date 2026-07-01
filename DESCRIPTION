@@ -32,8 +32,11 @@ Imports:
   multcompView,
   purrr,
   pbapply,
-  tibble
+  tibble,
+  blockCV,
+  Metrics
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    rnaturalearthdata (>= 1.0.0)
 VignetteBuilder: knitr
