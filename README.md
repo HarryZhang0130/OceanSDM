@@ -37,7 +37,7 @@ For detailed tutorials and case studies, see the package vignette:
 ```{r}
 vignette("myutils", package = "OceanSDM")
 ```
-Or view online: [OceanSDM Vignette](https://github.com/HarryZhang0130/OceanSDM/blob/main/man/docs/myutils.html)
+Or view online: [OceanSDM Vignette](https://harryzhang0130.github.io/OceanSDM/docs/myutils.html)
 
 ## Functions
 
