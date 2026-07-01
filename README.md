@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 You can install the development version of `OceanSDM` from GitHub:
 ```{r}
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("HarryZhang0130/OceanSDM")
+remotes::install_github("HarryZhang0130/OceanSDM",dependencies = TRUE)
 ```
 
 ## Overview
