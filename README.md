@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
  <!-- README.Rmd is compiled to README.md, which is displayed on GitHub -->
   
-  # OceanSDM
+  # OceanSDM <a href="https://harryzhang0130.github.io/OceanSDM/"><img src="man/figures/logo.png" align="right" height="120" alt="OceanSDM website" /></a>
   
   [![R-CMD-check](https://github.com/HarryZhang0130/OceanSDM/workflows/R-CMD-check/badge.svg)](https://github.com/HarryZhang0130/OceanSDM/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
