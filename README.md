@@ -28,8 +28,7 @@ remotes::install_github("HarryZhang0130/OceanSDM",dependencies = TRUE)
 - Build ensemble SDMs using multiple algorithms
 - Map predictions and evaluate model performance
 - Generate response curves and variable importance plots
-For detailed tutorials, see the package vignette:
- [OceanSDM Vignette](https://github.com/HarryZhang0130/OceanSDM/OceanSDM_mannual.pdf)
+For detailed tutorials, see "OceanSDM_mannual.pdf".
 
 ## Functions
 
