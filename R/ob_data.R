@@ -2,20 +2,20 @@
 #'
 #' @param key Character. The species scientific name (e.g., "Rhincodon typus").
 #' @param sp_geometry Character. The geographic range of the study area as a WKT polygon
-#'        (e.g., "POLYGON ((20 -41, 20 40, 180 40, 180 -41, 20 -41))").
+#'   (e.g., "POLYGON ((20 -41, 20 40, 180 40, 180 -41, 20 -41))").
 #' @param start_date Character. Start date used in `robis::occurrence()`, format "YYYY-MM-DD".
 #' @param end_date Character. End date used in `robis::occurrence()`, format "YYYY-MM-DD".
 #' @param event_date Character. Year range used in `rgbif::occ_search()`, format "YYYY-MM-DD,YYYY-MM-DD".
 #'
 #' @return A list containing:
 #'   \item{sp_occ}{Data frame of cleaned occurrence records with columns:
-#'         `Species`, `decimalLatitude`, `decimalLongitude`, `date`, `year`, `month`, `day`.}
+#'     `Species`, `decimalLatitude`, `decimalLongitude`, `date`, `year`, `month`, `day`.}
 #'   \item{plot}{A ggplot map plot of occurrences.}
 #'
 #' @importFrom robis occurrence
 #' @importFrom rgbif occ_search
 #' @importFrom ggplot2 ggplot geom_polygon geom_point map_data coord_quickmap theme_minimal labs
-#' @importFrom dplyr select
+#' @importFrom dplyr select bind_rows
 #'
 #' @examples
 #' \donttest{
@@ -31,13 +31,12 @@
 #' @export
 ob_data <- function(key, sp_geometry, start_date, end_date, event_date) {
 
-  # ------------------------- internal field standardization function -------------------------
+  # ---- Internal field standardization function ----
   options(warn = 1)
-  # column name variations to standard names.
+
   map_fields <- function(df) {
     if (is.null(df) || nrow(df) == 0) return(df)
 
-    # Define a named list of target fields and their possible synonyms
     field_synonyms <- list(
       species = c("species","scientificName", "scientificname", "scientific_name", "name"),
       decimalLatitude = c("decimalLatitude", "decimallatitude", "lat", "latitude", "y", "decimal_latitude"),
@@ -50,46 +49,37 @@ ob_data <- function(key, sp_geometry, start_date, end_date, event_date) {
         message(sprintf("\nInfo: Standard column '%s' already present and used.", target))
         next
       }
-
       synonym_columns <- field_synonyms[[target]]
       found_col <- synonym_columns[synonym_columns %in% names(df)]
-
       if (length(found_col) > 0) {
         source_col <- found_col[1]
         df[[target]] <- df[[source_col]]
-        message(sprintf("\nInfo: Standard column '%s' to standard name '%s'", source_col, target))
+        message(sprintf("\nInfo: Standard column '%s' mapped to standard name '%s'", source_col, target))
       } else {
         df[[target]] <- NA
         warning(sprintf("\nWarning: No column found for required field '%s'. Created with NAs.", target))
       }
     }
 
-    # Keep only the standard columns we need (no depth)
     final_cols <- c("species", "decimalLatitude", "decimalLongitude", "eventDate")
     df <- df[, intersect(final_cols, names(df)), drop = FALSE]
-
     return(df)
   }
-  # ------------------------- end internal field mapping -------------------------
 
-  # ------------------------- internal plotting function -------------------------
+  # ---- Internal plotting function ----
   plot_map_alt <- function(data, zoom = TRUE,
                            point_size = 1, point_alpha = 0.6, point_color = "steelblue",
                            land_fill = "grey90", land_color = "grey70", ...) {
-
     world_df <- ggplot2::map_data("world")
-
     p <- ggplot2::ggplot() +
       ggplot2::geom_polygon(data = world_df,
                             ggplot2::aes(x = long, y = lat, group = group),
                             fill = land_fill, color = land_color, linewidth = 0.2)
-
     p <- p +
       ggplot2::geom_point(data = data,
                           ggplot2::aes(x = decimalLongitude, y = decimalLatitude),
                           size = point_size, alpha = point_alpha,
                           color = point_color, ...)
-
     if (zoom) {
       x_range <- range(data$decimalLongitude, na.rm = TRUE)
       y_range <- range(data$decimalLatitude, na.rm = TRUE)
@@ -101,38 +91,44 @@ ob_data <- function(key, sp_geometry, start_date, end_date, event_date) {
     } else {
       p <- p + ggplot2::coord_quickmap()
     }
-
     p <- p +
       ggplot2::theme_minimal() +
       ggplot2::labs(x = "Longitude", y = "Latitude")
-
     return(p)
   }
-  # ------------------------- end internal plotting function -------------------------
 
-  # --- Main Data Processing ---
+  # ---- Main Data Processing ----
 
-  # --- Download from OBIS ---
+  # Define empty template for no-data cases
+  empty_df <- data.frame(
+    species = character(),
+    decimalLatitude = numeric(),
+    decimalLongitude = numeric(),
+    eventDate = character(),
+    stringsAsFactors = FALSE
+  )
+
+  # ---- Download from OBIS ----
   df <- robis::occurrence(
     scientificname = key,
     geometry = sp_geometry,
     startdate = start_date,
     enddate = end_date
   )
-  cat("\n")  #
+  cat("\n")
   ob0 <- as.data.frame(df)
+
+  sp_ob <- empty_df  # initialize empty
+
   if (nrow(ob0) > 0) {
-    # Apply fields standardization (will standardize column names)
     ob1 <- map_fields(ob0)
-    # Remove records with missing coordinates
     ob1 <- subset(ob1, !(is.na(ob1$decimalLatitude) | is.na(ob1$decimalLongitude)))
     sp_ob <- subset(ob1, !((ob1$decimalLatitude == 0) & (ob1$decimalLongitude == 0)))
   } else {
     warning("No data were selected from OBIS")
-    data.frame()
   }
 
-  # --- Download from GBIF ---
+  # ---- Download from GBIF ----
   df_gbif <- rgbif::occ_search(
     scientificName = key,
     geometry = sp_geometry,
@@ -141,24 +137,24 @@ ob_data <- function(key, sp_geometry, start_date, end_date, event_date) {
     limit = 100000
   )
   gb0 <- as.data.frame(df_gbif$data)
+
+  sp_gb <- empty_df  # initialize empty
+
   if (nrow(gb0) > 0) {
-    # Apply fields standardization (will standardize column names)
     gb1 <- map_fields(gb0)
-    # Remove records with missing coordinates
     gb1 <- subset(gb1, !(is.na(gb1$decimalLatitude) | is.na(gb1$decimalLongitude)))
     sp_gb <- subset(gb1, !((gb1$decimalLatitude == 0) & (gb1$decimalLongitude == 0)))
   } else {
     warning("No data were selected from GBIF")
-    data.frame()
   }
 
-  # --- Combine and Clean Data with Field Mapping ---
-  ob_gb <- rbind(sp_gb, sp_ob)
+  # ---- Combine and Clean Data ----
+  ob_gb <- dplyr::bind_rows(sp_gb, sp_ob)
 
   # Replace scientific names with the provided key
   ob_gb$scientificName <- key
 
-  # --- Format dates ---
+  # ---- Format dates ----
   ob_gb$date <- NA
   ob_gb$year <- NA
   ob_gb$month <- NA
@@ -199,25 +195,25 @@ ob_data <- function(key, sp_geometry, start_date, end_date, event_date) {
   # Remove rows without a valid date
   ob_gb <- ob_gb[!is.na(ob_gb$date), ]
 
-  # --- Final cleaning (no depth) ---
+  # ---- Final cleaning ----
   ob_gb$decimalLatitude <- round(ob_gb$decimalLatitude, 5)
   ob_gb$decimalLongitude <- round(ob_gb$decimalLongitude, 5)
 
-  # Select and rename final output columns (no depth)
+  # Select and rename final output columns
   final_cols <- c("species", "decimalLatitude", "decimalLongitude", "date", "year", "month", "day")
   ob_gb <- ob_gb[, intersect(final_cols, names(ob_gb))]
   ob_gb <- unique(ob_gb)
 
-  # --- Plot occurrences on map ---
+  # ---- Plot occurrences on map ----
   pf <- plot_map_alt(ob_gb, zoom = TRUE)
 
-  # --- Print summary information (no depth) ---
+  # ---- Print summary information ----
   cat("Original occurrences:\n")
   print(str(ob_gb))
   cat("Plot occurrences on worldmap:\n")
   print(pf)
 
-  # --- Return results (no depth_summary) ---
+  # ---- Return results ----
   return(list(
     sp_occ = ob_gb,
     plot = pf

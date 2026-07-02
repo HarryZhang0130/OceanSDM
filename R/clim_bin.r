@@ -15,6 +15,7 @@
 #'   `"thetao_mean"`.
 #' @param save_path Character. Directory path where output files will be saved.
 #' @param na_value Numeric. Value to replace `NA`. Default `-9999`.
+#'
 #' @return Invisibly returns a character vector of all generated file paths.
 #' @export
 clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "season"),
@@ -24,7 +25,7 @@ clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "s
   time_type <- match.arg(time_type)
   if (!dir.exists(save_path)) dir.create(save_path, recursive = TRUE)
 
-  # ---- 1. Convert presence rasters to SpatRaster (terra) ----
+  # ---- 1. Convert presence rasters to list of SpatRaster ----
   to_spatraster <- function(x) {
     if (inherits(x, "SpatRaster")) return(x)
     if (inherits(x, "RasterLayer")) return(terra::rast(x))
@@ -49,10 +50,9 @@ clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "s
     stop("presence_asc must be a named list with folder names as names (e.g., Q1, Q2, ...)")
   }
 
-  # ---- 2. Read NetCDF information ----
+  # ---- 2. Read NetCDF metadata ----
   cat("Reading NetCDF file...\n")
   nc <- ncdf4::nc_open(clim_nc)
-
   lon <- ncdf4::ncvar_get(nc, "longitude")
   lat <- ncdf4::ncvar_get(nc, "latitude")
   depth <- ncdf4::ncvar_get(nc, "depth")
@@ -68,31 +68,30 @@ clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "s
   } else {
     dates <- seq(as.Date("2015-01-01"), by = "month", length.out = length(time))
   }
-
   years <- lubridate::year(dates)
   months <- lubridate::month(dates)
 
-  # ---- 3. Temporal grouping ----
+  # ---- 3. Temporal grouping (only for month/quarter, season handled separately) ----
   if (time_type == "month") {
-    time_groups <- paste0(years, "_", sprintf("%02d", months))
-    folder_names <- paste0("M", sprintf("%02d", months))
-    unique_groups <- unique(time_groups)
+    folder_names <- paste0("M", sprintf("%02d", 1:12))
+    # Actually, we only need the unique folder names that exist in presence_asc
+    # We will filter later.
   } else if (time_type == "quarter") {
-    quarters <- lubridate::quarter(dates)
-    time_groups <- paste0(years, "_Q", quarters)
-    folder_names <- paste0("Q", quarters)
-    unique_groups <- unique(time_groups)
-  } else if (time_type == "season") {
-    # Seasonal aggregation: use English season names
-    season_names <- c("Winter", "Spring", "Summer", "Autumn")
-    folder_names <- season_names
-    unique_groups <- season_names
-    time_groups <- rep(NA, length(time))  # placeholder
+    folder_names <- paste0("Q", 1:4)
+  } else { # season
+    folder_names <- c("Winter", "Spring", "Summer", "Autumn")
   }
 
-  cat("Total temporal groups:", length(unique_groups), "\n")
+  # Only keep folder_names that have corresponding presence rasters
+  valid_folders <- intersect(folder_names, names(presence_asc))
+  if (length(valid_folders) == 0) {
+    stop("None of the presence raster names match the expected folder names for time_type.")
+  }
+  folder_names <- valid_folders
 
-  # ---- 4. Universal variable name resolution ----
+  cat("Processing groups:", paste(folder_names, collapse = ", "), "\n")
+
+  # ---- 4. Variable name resolution ----
   available_vars <- names(nc$var)
   if (var_name %in% available_vars) {
     cat("Using variable:", var_name, "\n")
@@ -113,7 +112,7 @@ clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "s
     }
   }
 
-  # ---- 5. Define season month sets for both hemispheres (using season names) ----
+  # ---- 5. Define season month sets for both hemispheres ----
   north_season_months <- list(
     Winter = c(12, 1, 2),
     Spring = c(3, 4, 5),
@@ -127,112 +126,124 @@ clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "s
     Autumn = c(3, 4, 5)
   )
 
-  # ---- 6. Create folders for each temporal group ----
-  for (folder_name in unique(folder_names)) {
+  # ---- 6. Create output folders ----
+  for (folder_name in folder_names) {
     group_folder <- file.path(save_path, folder_name)
     if (!dir.exists(group_folder)) dir.create(group_folder, recursive = TRUE)
   }
 
-  # ---- 7. Compute means for each depth layer and temporal group ----
+  # ---- 7. Precompute presence cell indices and time indices for each group ----
+  group_info <- list()
+  for (folder_name in folder_names) {
+    pres_raster <- presence_asc[[folder_name]]
+    if (!inherits(pres_raster, "SpatRaster")) {
+      pres_raster <- terra::rast(pres_raster)
+    }
+    pres_vals <- terra::values(pres_raster, mat = FALSE)
+    presence_cells <- which(pres_vals == 1)
+    if (length(presence_cells) == 0) {
+      warning(sprintf("Group %s has no presence pixels, skipping", folder_name))
+      next
+    }
+    presence_xy <- terra::xyFromCell(pres_raster, presence_cells)
+
+    # Find nearest NC indices
+    lon_idx <- apply(presence_xy[, 1, drop = FALSE], 1, function(x) which.min(abs(lon - x)))
+    lat_idx <- apply(presence_xy[, 2, drop = FALSE], 1, function(x) which.min(abs(lat - x)))
+    nc_lin_idx <- (lat_idx - 1) * length(lon) + lon_idx
+
+    # Compute time indices for this group based on time_type
+    if (time_type == "month") {
+      # folder_name is like "M01", "M02", ...
+      month_num <- as.numeric(substr(folder_name, 2, 3))
+      time_idx <- which(months == month_num)
+    } else if (time_type == "quarter") {
+      # folder_name is like "Q1", "Q2", ...
+      quarter_num <- as.numeric(substr(folder_name, 2, 2))
+      time_idx <- which(lubridate::quarter(dates) == quarter_num)
+    } else { # season
+      time_idx <- NULL  # will be handled per cell based on latitude
+    }
+
+    group_info[[folder_name]] <- list(
+      presence_cells = presence_cells,
+      nc_lin_idx = nc_lin_idx,
+      lat_vals = presence_xy[, 2],
+      time_idx = time_idx
+    )
+  }
+
+  if (length(group_info) == 0) stop("No valid presence groups found.")
+
+  # ---- 8. Compute means for each depth layer and group ----
   result_files <- list()
 
   for (d in seq_along(depth)) {
     cat(sprintf("\nProcessing depth layer %.1f m...\n", depth[d]))
 
-    # Read all time points for this depth layer
+    # Read entire time series for this depth layer
     temp_data_full <- ncdf4::ncvar_get(nc, var_name, start = c(1,1,d,1), count = c(-1,-1,1,-1))
-    dimnames(temp_data_full) <- list(lon = lon, lat = lat, time = 1:length(time))
+    # Reshape to (lon*lat) x time
+    nlon <- length(lon)
+    nlat <- length(lat)
+    ntime <- length(time)
+    temp_mat <- matrix(temp_data_full, nrow = nlon * nlat, ncol = ntime)
 
-    for (g in seq_along(unique_groups)) {
-      group <- unique_groups[g]
-      folder_name <- folder_names[g]
-      cat(sprintf(" Processing group %s...\n", folder_name))
+    for (folder_name in names(group_info)) {
+      cat(sprintf("  Processing group %s...\n", folder_name))
+      info <- group_info[[folder_name]]
+      presence_cells <- info$presence_cells
+      nc_lin_idx <- info$nc_lin_idx
+      lat_vals <- info$lat_vals
 
-      # Get presence raster for this group
-      if (is.list(presence_asc) && !is.null(names(presence_asc))) {
-        if (folder_name %in% names(presence_asc)) {
-          pres_raster <- presence_asc[[folder_name]]
-        } else {
-          warning(sprintf("No presence raster for group %s, skipping", folder_name))
+      # Determine time indices and compute means
+      if (time_type %in% c("month", "quarter")) {
+        time_idx <- info$time_idx
+        if (length(time_idx) == 0) {
+          warning(sprintf("No time indices for group %s", folder_name))
           next
         }
-      } else {
-        stop("Unable to find presence rasters")
-      }
+        sub_mat <- temp_mat[nc_lin_idx, time_idx, drop = FALSE]
+        group_means <- rowMeans(sub_mat, na.rm = TRUE)
+      } else { # season
+        # Split cells into north and south
+        north_mask <- lat_vals >= 0
+        south_mask <- !north_mask
+        group_means <- numeric(length(presence_cells))
 
-      if (!inherits(pres_raster, "SpatRaster")) {
-        pres_raster <- terra::rast(pres_raster)
-      }
-
-      pres_vals <- terra::values(pres_raster, mat = FALSE)
-      presence_cells <- which(pres_vals == 1)
-      if (length(presence_cells) == 0) {
-        warning(sprintf("Group %s has no presence pixels, skipping", folder_name))
-        next
-      }
-
-      presence_xy <- terra::xyFromCell(pres_raster, presence_cells)
-      find_nc_idx <- function(xy) {
-        c(which.min(abs(lon - xy[1])), which.min(abs(lat - xy[2])))
-      }
-      presence_indices <- t(apply(presence_xy, 1, find_nc_idx))
-      colnames(presence_indices) <- c("lon_idx", "lat_idx")
-      unique_indices <- unique(presence_indices)
-
-      # ---- Compute means for this group ----
-      if (time_type == "season") {
-        # For each unique grid point, determine hemisphere and corresponding month set
-        group_means <- numeric(nrow(unique_indices))
-        season_name <- folder_name  # e.g., "Winter"
-        for (i in seq_len(nrow(unique_indices))) {
-          lon_idx <- unique_indices[i, "lon_idx"]
-          lat_idx <- unique_indices[i, "lat_idx"]
-          lat_val <- lat[lat_idx]
-          # Choose month set based on latitude (north: >=0, south: <0)
-          if (lat_val >= 0) {
-            month_set <- north_season_months[[season_name]]
-          } else {
-            month_set <- south_season_months[[season_name]]
-          }
+        if (any(north_mask)) {
+          month_set <- north_season_months[[folder_name]]
           time_idx <- which(months %in% month_set)
-          if (length(time_idx) == 0) {
-            group_means[i] <- NA
-            next
+          if (length(time_idx) > 0) {
+            sub_mat <- temp_mat[nc_lin_idx[north_mask], time_idx, drop = FALSE]
+            group_means[north_mask] <- rowMeans(sub_mat, na.rm = TRUE)
+          } else {
+            group_means[north_mask] <- NA
           }
-          temp_series <- temp_data_full[lon_idx, lat_idx, time_idx]
-          group_means[i] <- mean(temp_series, na.rm = TRUE)
         }
-      } else {
-        # For month and quarter: use global time indices
-        if (time_type == "month") {
-          time_idx <- which(time_groups == group)
-        } else if (time_type == "quarter") {
-          time_idx <- which(time_groups == group)
-        }
-        if (length(time_idx) == 0) next
-        group_means <- numeric(nrow(unique_indices))
-        for (i in seq_len(nrow(unique_indices))) {
-          lon_idx <- unique_indices[i, "lon_idx"]
-          lat_idx <- unique_indices[i, "lat_idx"]
-          temp_series <- temp_data_full[lon_idx, lat_idx, time_idx]
-          group_means[i] <- mean(temp_series, na.rm = TRUE)
+        if (any(south_mask)) {
+          month_set <- south_season_months[[folder_name]]
+          time_idx <- which(months %in% month_set)
+          if (length(time_idx) > 0) {
+            sub_mat <- temp_mat[nc_lin_idx[south_mask], time_idx, drop = FALSE]
+            group_means[south_mask] <- rowMeans(sub_mat, na.rm = TRUE)
+          } else {
+            group_means[south_mask] <- NA
+          }
         }
       }
 
-      # Create output raster and assign means
-      result_raster <- terra::rast(pres_raster)
-      terra::values(result_raster) <- NA
-      for (j in seq_along(presence_cells)) {
-        cell <- presence_cells[j]
-        idx_match <- which(unique_indices[, "lon_idx"] == presence_indices[j, "lon_idx"] &
-                             unique_indices[, "lat_idx"] == presence_indices[j, "lat_idx"])
-        if (length(idx_match) == 1) {
-          result_raster[cell] <- group_means[idx_match]
-        }
+      # Create output raster
+      template_raster <- presence_asc[[folder_name]]
+      if (!inherits(template_raster, "SpatRaster")) {
+        template_raster <- terra::rast(template_raster)
       }
+      result_raster <- terra::rast(template_raster)
+      terra::values(result_raster) <- NA
+      result_raster[presence_cells] <- group_means
       result_raster[is.na(result_raster)] <- na_value
 
-      # Save as ASCII grid
+      # Save
       group_folder <- file.path(save_path, folder_name)
       file_name <- sprintf("%s_temp_%.1f.asc", folder_name, depth[d])
       file_path <- file.path(group_folder, file_name)
