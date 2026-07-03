@@ -28,8 +28,8 @@ temporal group (folder name). For season, names must be one of
 \code{"quarter"}, or \code{"season"}.}
 
 \item{var_name}{Character. Variable name in NetCDF. If not found exactly,
-the function will attempt to match (case‑insensitive) and warn. Default is
-\code{"thetao_mean"}.}
+the function will attempt to match (case‑insensitive) and warn.
+e.g., \code{"thetao_mean"}.}
 
 \item{save_path}{Character. Directory path where output files will be saved.}
 

@@ -7,7 +7,7 @@
 correct_ob(
   occ_path,
   predictor_raster_path,
-  max_distance_km = 10,
+  max_distance_km = NULL,
   out_dir,
   verbose = TRUE,
   plot = FALSE,
@@ -24,7 +24,7 @@ columns \code{decimalLongitude} and \code{decimalLatitude} (WGS84 coordinates).}
 (e.g., an ASCII or GeoTIFF file) used as reference for correction.}
 
 \item{max_distance_km}{Numeric. Maximum distance (in kilometres) that a point
-will be adjusted to the nearest grid cell with non-\code{NA} value. Default is \code{10}.}
+will be adjusted to the nearest grid cell with non-NA value.}
 
 \item{out_dir}{Character. \strong{Full file path} (including \code{.csv} extension) where
 the corrected occurrence data will be saved. If the directory does not exist,

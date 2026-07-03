@@ -7,7 +7,7 @@
 #' @param occ_path character. Path to occurrence file (table with columns: long, lat, year, month).
 #' @param env_path character. Path to NetCDF file containing environmental data (e.g., temperature, DO).
 #' @param toler_quantiles vector. Quantiles for tolerance range (default: c(0.01, 0.99)).
-#' @param pref_method character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile" (default: "FWHM").
+#' @param pref_method character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile".
 #' @param pref_quantiles vector. Quantiles for preference range when pref_method = "quantile" (default: c(0.25, 0.75)).
 #' @param save_path character. Directory to save output plot and summary CSV. If NULL, nothing saved.
 #' @param min_year numeric. First year of occurrence data (used to compute time index in NetCDF).

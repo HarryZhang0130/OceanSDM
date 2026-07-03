@@ -12,7 +12,7 @@ niche_tag(
   pref_method = c("FWHM", "quantile"),
   pref_quantiles = c(0.25, 0.75),
   variable_name = "Environmental variable",
-  unit = "℃",
+  unit = NULL,
   seed = 123,
   width = 6,
   height = 5,
@@ -33,7 +33,7 @@ standardization (default: 10000).}
 (default: c(0.01, 0.99)).}
 
 \item{pref_method}{Character. Method for preference range: \code{"FWHM"} (Full Width at
-Half Maximum) or \code{"quantile"} (default: \code{"FWHM"}).}
+Half Maximum) or \code{"quantile"}.}
 
 \item{pref_quantiles}{Numeric vector of length 2. Quantiles for preference range
 when \code{pref_method = "quantile"} (default: c(0.25, 0.75)).}
@@ -41,8 +41,7 @@ when \code{pref_method = "quantile"} (default: c(0.25, 0.75)).}
 \item{variable_name}{Character. Name of the variable (e.g., \code{"Temperature"},
 \code{"Dissolved Oxygen"}) for plotting (default: \code{"Environmental variable"}).}
 
-\item{unit}{Character. Unit of the variable (e.g., \code{"°C"}, \code{"mg/L"}) for plotting
-(default: \code{"℃"}).}
+\item{unit}{Character. Unit of the variable (e.g., \code{"°C"}, \code{"mg/L"}) for plotting}
 
 \item{seed}{Integer. Random seed for reproducibility (default: 123).}
 

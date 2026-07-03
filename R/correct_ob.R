@@ -5,7 +5,7 @@
 #' @param predictor_raster_path Character. File path to the standard raster layer
 #'   (e.g., an ASCII or GeoTIFF file) used as reference for correction.
 #' @param max_distance_km Numeric. Maximum distance (in kilometres) that a point
-#'   will be adjusted to the nearest grid cell with non-`NA` value. Default is `10`.
+#'   will be adjusted to the nearest grid cell with non-NA value.
 #' @param out_dir Character. **Full file path** (including `.csv` extension) where
 #'   the corrected occurrence data will be saved. If the directory does not exist,
 #'   it will be created. If a directory path is given instead, a default filename
@@ -28,7 +28,7 @@
 #' @importFrom grDevices tiff dev.off
 #' @export
 correct_ob <- function(occ_path, predictor_raster_path,
-                       max_distance_km = 10, out_dir, verbose = TRUE,
+                       max_distance_km = NULL, out_dir, verbose = TRUE,
                        plot = FALSE, plot_file = NULL,
                        xlim = NULL, ylim = NULL) {
 

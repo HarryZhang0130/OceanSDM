@@ -8,7 +8,7 @@ range_check_single(
   species_name,
   occ_data,
   range_path,
-  buffer_km = 100,
+  buffer_km = NULL,
   plot = FALSE,
   plot_file = NULL,
   xlim = NULL,
@@ -24,7 +24,7 @@ or a character string path to a CSV file containing those columns.}
 \item{range_path}{Character. Path to the range map shapefile (must contain a column \code{sci_name}).}
 
 \item{buffer_km}{Numeric. Buffer distance (km) around the range map to consider
-points as valid (default: 100).}
+points as valid.}
 
 \item{plot}{Logical. If \code{TRUE}, generate a map showing point categories. Default \code{FALSE}.}
 

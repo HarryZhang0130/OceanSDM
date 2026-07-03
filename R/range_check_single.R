@@ -5,7 +5,7 @@
 #'   or a character string path to a CSV file containing those columns.
 #' @param range_path Character. Path to the range map shapefile (must contain a column `sci_name`).
 #' @param buffer_km Numeric. Buffer distance (km) around the range map to consider
-#'   points as valid (default: 100).
+#'   points as valid.
 #' @param plot Logical. If `TRUE`, generate a map showing point categories. Default `FALSE`.
 #' @param plot_file Character. Optional file path to save the plot as TIFF (e.g., "plot.tif").
 #'   If `NULL`, the plot is displayed in the graphics device.
@@ -37,7 +37,7 @@
 #' @importFrom rnaturalearth ne_countries
 #' @export
 range_check_single <- function(species_name, occ_data, range_path,
-                               buffer_km = 100,
+                               buffer_km = NULL,
                                plot = FALSE,
                                plot_file = NULL,
                                xlim = NULL,

@@ -28,6 +28,24 @@ library(OceanSDM) #
 # 1. Prepare species and environmental data 
 ## 1.1 Download species data from GBIF and OBIS using ob_data() 
 The Global Biodiversity Information Faculty (GBIF) and Ocean Biodiversity Information System (OBIS) are the two major sources of species occurrences at the global scale. The function ob_data() helps users automatically download the geo-referenced occurrences of either a single or many species. Here I demonstrated with an example of smaller temporal and spatial ranges than the real case in the paper to save the running time for creating this vignette.
+
+  Here is a detailed explanation about this function:
+
+-- @param key Character. The species scientific name (e.g., "Rhincodon typus").
+
+-- @param sp_geometry Character. The geographic range of the study area as a WKT polygon
+--   (e.g., "POLYGON ((20 -41, 20 40, 180 40, 180 -41, 20 -41))").
+
+-- @param start_date Character. Start date used in `robis::occurrence()`, format "YYYY-MM-DD".
+
+-- @param end_date Character. End date used in `robis::occurrence()`, format "YYYY-MM-DD".
+
+-- @param event_date Character. Year range used in `rgbif::occ_search()`, format "YYYY-MM-DD,YYYY-MM-DD".
+
+-- @return A list containing:
+--   {sp_occ}{Data frame of cleaned occurrence records with columns:
+     `Species`, `decimalLatitude`, `decimalLongitude`, `date`, `year`, `month`, `day`.}
+--   {plot}{A ggplot map plot of occurrences.}
 ```{r occurrence, dev='png', cache=TRUE}
  ws_occ<-ob_data(
     key<-'Rhincodon typus' ,# It can be a vector of the Latin names of all focal species
@@ -41,6 +59,32 @@ write.csv(ws_occ$sp_occ,"F:/whaleshark_sdm/occ/R_typus.csv",row.names = F)
 
 ## 1.2 Download .nc files of marine environmental predictors using env_download() 
 The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). But please note you must first install the copernicusmarine toolbox (and configure its running environment with conda or other softwares, see details at https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-installation) on which this function was built. Here I only showed a case of extracting sea surface temperature at smaller temporal and geographic ranges than the real case I used in the paper.
+  Here is a detailed explanation about this function:
+
+-- @param path_cmems_tool Character. Path to the copernicusmarine executable,
+   e.g. `"/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"`.
+
+-- @param out_dir Character. Directory where output data will be stored.
+
+-- @param productId Character. ID of the CMEMS product (see dataset user manual
+   in the CMEMS product webpage). e.g., `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
+   
+-- @param variable Character. Variable name to download, prefixed with "--variable ".
+    e.g., " --variable thetao_mean".
+    
+-- @param date_min Date or character. Minimum date. e.g., is `1993-01-01`.
+
+-- @param date_max Date or character. Maximum date. e.g., is `2022-12-01`.
+
+-- @param lon Numeric vector of length 2. Longitude range (min, max). e.g., `c(-180, 179.75)`.
+   
+-- @param lat Numeric vector of length 2. Latitude range (min, max). e.g., `c(-80, 90)`.
+   
+-- @param depth List of length 2. Depth range in meters (min, max). e.g., `list(0.51, 199.79)`.
+
+-- @param out_name Character. Output file name ending with `.nc`.
+
+-- @return No return value. The function downloads a NetCDF file to `out_dir`.
 ```{r set up tool path, cache=TRUE}
 ## Set up the path of the cms downloading tool and output directory
 path_cms<-"C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe" # replace to your own directory
@@ -555,7 +599,7 @@ sdm_q4<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
 
 ## 2.2 Plot predictive maps, variable importance and species response curves with TB_map(), TB_varimp(), and TB_rescur() #
 After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() automatically produces related figures (i.e., probability and binary maps, variable importance, and species response curves) required for publication.
-```{r plot 2D-SDM, cache=TRUE}
+```{r plot 2D-SDM, cache=FALSE}
 ## Clean the R environment
 rm()
 gc()
@@ -597,8 +641,9 @@ res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
                                  "3rd Quarter" = "#FF6B4A",
                                  "4th Quarter" = "#5D9BEC"),
                       time_names = time_names,
+                      time_folders = NULL,
                       legend_position = "bottom",
-                      ncol=3,
+                      ncol=3, nrow = NULL,
                       width = 9,
                       height = 5,
                       save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
@@ -700,7 +745,7 @@ temp_fit<-niche_tag(
 
 ### 3.1.2 Extract temperature data from thinned occurrences to estimate climatic niche
 Here, based on the pelagic trait of the focal species, I used niche_occ() to extract the temperature at the depth of 1 m at the thinned occurrences to estimate thermal niche.
-```{r niche_occ,cache=TRUE}
+```{r niche_occ,cache=FALSE}
 occ_path<-system.file("extdata", "R_typus_qs.txt", package = "OceanSDM")
 
 var_name<-"thetao_mean"
@@ -814,40 +859,40 @@ plot_stat_4D() maps the statistics (Max, Min, Range) of TD and PD across predict
 ## Run the whole code in subsection 3.3 to estimate three parameters (minimum, maximum, range) of thermally preferred depth or thermally tolerable depth. Here I load the input data I already prepared.
 
 TPD_quarter<-list(
-system.file("extdata","4D/TPD/Q1/Q1_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q1/Q1_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q1/Q1_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_depth_range.asc",package="OceanSDM")
+"F:/whaleshark_sdm/4D/TPD/Q1/Q1_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q1/Q1_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q1/Q1_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q2/Q2_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q3/Q3_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TPD/Q4/Q4_depth_range.asc"
 )
 TTD_quarter<-list(
-  system.file("extdata","4D/TTD/Q1/Q1_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q1/Q1_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q1/Q1_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_depth_range.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_min_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_max_depth.asc",package="OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_depth_range.asc",package="OceanSDM")
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q1/Q1_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q2/Q2_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q3/Q3_depth_range.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_min_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_max_depth.asc",
+  "F:/whaleshark_sdm/4D/TTD/Q4/Q4_depth_range.asc"
 )
 save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## for Preferred Depth (PD)
 save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## for Tolerable Depth (TD)
 quarter_files<-c(
-  Q1=system.file("extdata","result_sdm/Q1/predicted_presence.asc",package="OceanSDM"),
-  Q2=system.file("extdata","result_sdm/Q2/predicted_presence.asc",package="OceanSDM"),
-  Q3=system.file("extdata","result_sdm/Q3/predicted_presence.asc",package="OceanSDM"),
-  Q4=system.file("extdata","result_sdm/Q4/predicted_presence.asc",package="OceanSDM"))
+  Q1="F:/whaleshark_sdm/result_sdm/Q1/predicted_presence.asc",
+  Q2="F:/whaleshark_sdm/result_sdm/Q2/predicted_presence.asc",
+  Q3="F:/whaleshark_sdm/result_sdm/Q3/predicted_presence.asc",
+  Q4="F:/whaleshark_sdm/result_sdm/Q4/predicted_presence.asc")
 
 result_TPD <- plot_stat_4D(
   file_list = TPD_quarter,

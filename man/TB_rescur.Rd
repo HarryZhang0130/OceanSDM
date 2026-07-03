@@ -6,25 +6,25 @@
 \usage{
 TB_rescur(
   root_path,
-  time_type = "quarter",
-  time_folders = NULL,
-  time_names = NULL,
-  file_name = "rcurve.csv",
-  colors = NULL,
-  ncol = 4,
-  nrow = NULL,
+  time_type,
+  time_folders,
+  time_names,
+  file_name,
+  colors,
+  ncol,
+  nrow,
   y_label = "Habitat suitability",
   legend_position = c("vertical", "bottom"),
-  width = 8,
-  height = 4,
-  save_path = NULL
+  width,
+  height,
+  save_path
 )
 }
 \arguments{
 \item{root_path}{Character. Path to the root directory containing time period subfolders.}
 
 \item{time_type}{Character. Type of time periods: "quarter", "month", "season".
-Default "quarter". Ignored if \code{time_folders} is provided.}
+Ignored if \code{time_folders} is provided.}
 
 \item{time_folders}{Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
 If provided, overrides \code{time_type}.}
@@ -39,18 +39,18 @@ subfolder (e.g., "rcurve.csv"). Default: "rcurve.csv".}
 time periods. Defaults to \code{grDevices::hcl.colors()} with palette "Set3"
 (or \code{rainbow} if more than 12).}
 
-\item{ncol}{Integer. Number of columns in the panel. Default: 4.}
+\item{ncol}{Integer. Number of columns in the panel.}
 
 \item{nrow}{Integer. Number of rows in the panel. Automatically calculated if \code{NULL}.}
 
 \item{y_label}{Character. y‑axis label. Default: \code{"Habitat suitability"}.}
 
 \item{legend_position}{Character. Legend position: \code{"vertical"} (stacked legend
-in the last panel) or \code{"bottom"} (unified legend at the bottom). Default: \code{"vertical"}.}
+in the last panel) or \code{"bottom"} (unified legend at the bottom).}
 
-\item{width}{Numeric. Plot width in inches for saving. Default: 8.}
+\item{width}{Numeric. Plot width in inches for saving.}
 
-\item{height}{Numeric. Plot height in inches for saving. Default: 4.}
+\item{height}{Numeric. Plot height in inches for saving.}
 
 \item{save_path}{Character. Path to save the plot (TIFF format). If \code{NULL},
 the plot is not saved.}
