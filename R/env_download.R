@@ -6,16 +6,15 @@
 #' @param productId Character. ID of the CMEMS product (see dataset user manual
 #'   in the CMEMS product webpage).
 #'   e.g., `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
-#' @param variable Character. Variable name to download, prefixed with "--variable ".
-#'   e.g., " --variable thetao_mean".
-#' @param date_min Date or character. Minimum date. e.g., `1993-01-01`.
-#' @param date_max Date or character. Maximum date. e.g., `2022-12-01`.
+#' @param variable Character. Variable name to download. e.g., "thetao_mean".
+#' @param date_min Date or character. Minimum date. e.g., "1993-01-01".
+#' @param date_max Date or character. Maximum date. e.g., "2022-12-01".
 #' @param lon Numeric vector of length 2. Longitude range (min, max).
 #'   e.g., `c(-180, 179.75)`.
 #' @param lat Numeric vector of length 2. Latitude range (min, max).
 #'   e.g., `c(-80, 90)`.
-#' @param depth List of length 2. Depth range in meters (min, max).
-#'   e.g., `list(0.51, 199.79)`.
+#' @param depth Numeric vector of length 2. Depth range in meters (min, max).
+#'   e.g., `c(0.51, 199.79)`.
 #' @param out_name Character. Output file name ending with `.nc`.
 #'
 #' @return No return value. The function downloads a NetCDF file to `out_dir`.
@@ -38,21 +37,6 @@
 #' @export
 env_download<-function(path_cmems_tool,out_dir,productId,variable,
                        date_min,date_max,lon,lat,depth,out_name){
-  #### Step 1: install Anaconda ######
-  # install.packages("reticulate")
-  # library(reticulate)
-  # install_miniconda(path = "C:/shark/miniconda", update = T) # give your own path where miniconda will be installed
-  # conda_list(conda = "C:/shark/miniconda/_conda.exe")
-  # use_condaenv(condaenv = "r-reticulate", conda = "C:/shark/miniconda/_conda.exe")
-  #### Step 2: install copernicusmarine and login #####
-  # go to the search pannel of your PC and find  Anaconda prompt terminal and follow this to install copernicusmarine:  https://www.bilibili.com/read/cv28415761/
-  # python -m pip install copernicusmarine
-  # conda create --name copernicusmarine conda-forge::copernicusmarine --yes
-  # conda activate copernicusmarine
-  # copernicusmarine --version && copernicusmarine --help
-  # set COPERNICUSMARINE_SERVICE_USERNAME=your_username # set up username
-  # set COPERNICUSMARINE_SERVICE_PASSWORD=your_password # set up password
-  # copernicusmarine login
 
   # Ensure output directory exists
   if (!dir.exists(out_dir)) {
@@ -60,13 +44,13 @@ env_download<-function(path_cmems_tool,out_dir,productId,variable,
   }
 
   # Build system command
-  command <- paste(path_cmems_tool, "subset -i", productId,
+  command <- paste(shQuote(path_cmems_tool), "subset -i", productId,
                    "-x", lon[1], "-X", lon[2],
                    "-y", lat[1], "-Y", lat[2],
                    "-t", date_min, "-T", date_max,
                    "-z", depth[1], "-Z", depth[2],
-                   variable, "-o", out_dir, "-f", out_name,
-                   "--force-download", sep = " ")
+                   "-v", variable, "-o", shQuote(out_dir), "-f", out_name,
+                    sep = " ")
 
   print(command)
   system(command)

@@ -54,16 +54,34 @@ ws_occ<-ob_data(
 
 ## 1.2 Download .nc files of marine environmental predictors using env_download() 
   The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). 
-  !!! But please note you must first install the copernicusmarine toolbox (with conda or other software, see details at https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-installation) on which this function was built. 
+  !!! But please note you must first get access to the copernicusmarine toolbox on which this function was built. 
+ 
+  Here is a step-by-step instruction for this:  
+  
+  Step 1. Download the executable file
+  
+  If you are the first time to use copernicusmarine toolbox. You can first download an executable file (copernicusmarine.exe, from Github) of the copernicusmarine toolbox. See the download links in the “Step 2” of an official instruction at https://help.marine.copernicus.eu/en/articles/10750437-copernicus-marine-toolbox-executable-no-installation. 
+
+  Step 2. Move it to a safe directory and register
+  
+  After download it, make sure you move it to a directory (e.g., "C:\shark") that you won't clean when you utilize storage cleaning up software. If you haven’t registered to the Copernicus Marine Service yet, you can register at https://data.marine.copernicus.eu/register.
+
+  Step 3. Login to the Copernicus Marine Service
+  
+  Go to your command prompt and navigate to the executable file. For instance, if you are using Windows and the executable file is stored at "C:\shark", then in the command prompt, type: cd "C:\shark". Then type: copernicusmarine login. This will allow you to use your registered username and password to create a credential file (.copernicusmarine-credentials) and store it in your PC.
+  
+  After these three steps, you can download the required product in R by executing command lines that have already been embeded in the env_download() function. Or you can follow the instruction to use the command prompt to do this instead of using env_download(). Detailed process is available at https://help.marine.copernicus.eu/en/articles/8638253-how-to-download-data-via-the-copernicus-marine-toolbox-in-r#h_299a73457d. 
+
+  
   Here is an explanation of each parameter of the function:
 
-@param path_cmems_tool Character. Path to the copernicusmarine executable, e.g. `"/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"`.
+@param path_cmems_tool Character. Path to the copernicusmarine executable file.
 
 @param out_dir Character. Directory where output data will be stored.
 
 @param productId Character. ID of the CMEMS product (see dataset user manual in the CMEMS product webpage).
 
-@param variable Character. Variable name to download, prefixed with "--variable ".
+@param variable Character. Variable name to download.
 
 @param date_min Date or character. Minimum date.
 
@@ -73,45 +91,44 @@ ws_occ<-ob_data(
 
 @param lat Numeric vector of length 2. Latitude range (min, max).
 
-@param depth List of length 2. Depth range in meters (min, max). e.g., `list(0.51, 199.79)`.
+@param depth Numeric vector of length 2. Depth range in meters (min, max).
 
 @param out_name Character. Output file name ending with `.nc`.
 
   Here I only showed a case of extracting sea surface temperature at smaller temporal and geographic ranges than the real case I used in the paper.
 ```{r set up tool path, cache=TRUE}
 ## Set up the path of the cms downloading tool and output directory
-path_cms<-"C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe" # replace to your own directory
+path_cms<-"C:/shark/copernicusmarine.exe" # replace to your own directory
 out_dir <- "F:/whaleshark_sdm/cmems" # replace to your own directory
 library(lubridate)
 ```
 ### 1.2.1 Extract surface layer of marine environmental predictors
 ```{r download surface predictor data, cache=TRUE}
 ## Note here is a simplified example for fast creating the vignettes
-
 productId <- "cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"
-variable <- " --variable thetao_mean"
+variable <- "thetao_mean"
 date_min <- ymd(20240101) # start_date, it should be ymd(20150101) in the paper
 date_max <- ymd(20241201) # end_date
 lon<-c(90,180) # longitudinal range
 lat<-c(-41,40) # latitudinal range
 ## sea surface temperature
-depth <- list(0.51, 2) # depth_min, depth_max
-out_name <- paste("IndoWPac_temp_1m_y2024.nc", sep="") # it should be paste("IndoWPac_temp_1m_y2015_y2024.nc", sep="") in the paper
+depth <- c(0.51, 2) # depth_min, depth_max
+out_name <- "IndoWPac_temp_1m_y2024.nc" # it should be "IndoWPac_temp_1m_y2015_y2024.nc" in the paper
 env_download(path_cms,out_dir,productId,variable,
               date_min,date_max,lon,lat,depth,out_name)
 ## sea surface height
-# variable <- " --variable zos_mean"
-# out_name <- paste("IndoWPac_slh_1m_y2015_y2024.nc", sep="")
+# variable <- "zos_mean"
+# out_name <- "IndoWPac_slh_1m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 ## mixed layer depth
-# variable <- " --variable mlotst_mean"
-# out_name <- paste("IndoWPac_mlt_1m_y2015_y2024.nc", sep="")
+# variable <- "mlotst_mean"
+# out_name <- "IndoWPac_mlt_1m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 ## salinity
-# variable <- " --variable so_mean"
-# out_name <- paste("IndoWPac_so_1m_y2015_y2024.nc", sep="")
+# variable <- "so_mean"
+# out_name <- "IndoWPac_so_1m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 ```
@@ -119,7 +136,7 @@ env_download(path_cms,out_dir,productId,variable,
 ### 1.2.2 Extract multiple depth layers of ocean temperature
   This step is NOT necessary for the 2D SDM construction, but is required for estimating suitable/tolerable depths based on species realized climatic niche and the three-dimensional distributions of the focal climatic variable (here, temperature) over the chosen temporal bins (here, four quarters). Here given the size of the multi-depth layers of data, I split it into four .nc files (0-200m, 200-400m, 400-1050m, 1050-1946m). The maximum depth (1946m) was based on the known depth records of the whale shark in the study area. The codes were set to 'not run' with the hash tag while creating this vignette as it was time consuming. Users can simply remove these hash tags (Using 'Control+Shift+C' for Windows) and run the code.
 ```{r download multi-depth layers of temperature, cache=TRUE}
-# variable <- " --variable thetao_mean"
+# variable <- "thetao_mean"
 # path_cmems_tool="C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"
 # out_dir = "F:/whaleshark_sdm/cmems"
 # productId = "cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"
@@ -127,20 +144,20 @@ env_download(path_cms,out_dir,productId,variable,
 # date_max = ymd(20241201) # end_date
 # lon<-c(90,180)
 # lat<-c(-41,40)
-# depth <- list(0.50, 200) # depth_min, depth_max
-# out_name <- paste("IndoWPac_temp_200m_y2015_y2024.nc", sep="")
+# depth <- c(0.50, 200) # depth_min, depth_max
+# out_name <- "IndoWPac_temp_200m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
-# depth <- list(200, 400) # depth_min, depth_max
-# out_name <- paste("IndoWPac_temp_200_400m_y2015_y2024.nc", sep="")
+# depth <- c(200, 400) # depth_min, depth_max
+# out_name <- "IndoWPac_temp_200_400m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
-# depth <- list(400, 1050) # depth_min, depth_max
-# out_name <- paste("IndoWPac_temp_400_1050m_y2015_y2024.nc", sep="")
+# depth <- c(400, 1050) # depth_min, depth_max
+# out_name <- "IndoWPac_temp_400_1050m_y2015_y2024.nc"
 #env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
-# depth <- list(1050, 1946) # depth_min, depth_max
-# out_name <- paste("IndoWPac_temp_1050_1946m_y2015_y2024.nc", sep="")
+# depth <- c(1050, 1946) # depth_min, depth_max
+# out_name <- "IndoWPac_temp_1050_1946m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 ```
@@ -153,14 +170,14 @@ env_download(path_cms,out_dir,productId,variable,
 # date_max <- ymd(20241201) # end_date
 # lon<-c(90,180)
 # lat<-c(-41,40)
-# depth <- list(0.51, 2) # depth_min, depth_max
-# variable <- " --variable nppv"
-# out_name <- paste("IndoWPac_npp_1m_y2015_y2024.nc", sep="")
+# depth <- c(0.51, 2) # depth_min, depth_max
+# variable <- "nppv"
+# out_name <- "IndoWPac_npp_1m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 
-# variable <- " --variable o2"
-# out_name <- paste("IndoWPac_o2_1m_y2015_y2024.nc", sep="")
+# variable <- "o2"
+# out_name <- "IndoWPac_o2_1m_y2015_y2024.nc"
 # env_download(path_cms,out_dir,productId,variable,
 #             date_min,date_max,lon,lat,depth,out_name)
 ```
@@ -195,7 +212,7 @@ To predict the dynamic distributions of marine species across the 2D space, all 
 @param lag_days Numeric. Number of days ocean seasonality lags behind atmospheric seasonality.
 
 @param temporal_bin Character. How a year will be split. One of `"monthly"`, `"quarterly"`, or `"seasonal"`.
-```{r env_bin, cache=TRUE}
+```{r env_bin, cache=FALSE}
 gc() # clear the R environment 
 ## sea surface temperature (Note this is a simplified example of using downloaded data in 1.2.1)
 env_bin(sp_trait="pelagic",            
@@ -438,7 +455,7 @@ Sometimes, you may need to check if all your species occurrences fall within the
 
 @param ylim Numeric vector of length 2 (min, max) for latitude limits. 
   If `NULL`, automatically determined from the buffered range.
-```{r range check, cache=TRUE}
+```{r range check, cache=FALSE}
 # You can get access to the example occurrences of whale sharks in the system file folder extdata.
 occ_path <-system.file("extdata", "R_typus.csv", package = "OceanSDM")
 
@@ -485,7 +502,7 @@ Previous SDM studies often find that some occurrences were not spatially matched
 
 @param ylim Numeric vector of length 2 (min, max) for latitude limits. 
   If `NULL`, automatically determined from the raster extent.
-```{r adjust_coordinates, cache=TRUE}
+```{r adjust_coordinates, cache=FALSE}
 
 ## Define input paths
 ev_layer<-system.file("extdata", "Q1/Depth.asc", package = "OceanSDM")
@@ -937,7 +954,7 @@ When tag-based temperature data are unavailable, niche_occ() implements an alter
 @param save_path Character. Directory path to save plot and summary CSV.
   If `NULL`, nothing is saved (default: `NULL`).
 
-```{r niche_tag,cache=TRUE}
+```{r niche_tag,cache=FALSE}
 ## Article 1 data (used as the standard bin given the no. of tagged individuals is the highest)
 article1_df <- data.frame(
   bin_lower = c(0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39),
@@ -1047,7 +1064,7 @@ Here, based on the pelagic trait of the focal species, I used niche_occ() to ext
 @param width numeric. Plot width in inches (default: 6).
 
 @param height numeric. Plot height in inches (default: 5).
-```{r niche_occ,cache=FALSE}
+```{r niche_occ,cache=TRUE}
 occ_path<-system.file("extdata", "R_typus_qs.txt", package = "OceanSDM")
 
 var_name<-"thetao_mean"

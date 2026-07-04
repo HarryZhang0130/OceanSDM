@@ -27,12 +27,11 @@ e.g. \code{"/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"}.}
 in the CMEMS product webpage).
 e.g., \code{"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"}.}
 
-\item{variable}{Character. Variable name to download, prefixed with "--variable ".
-e.g., " --variable thetao_mean".}
+\item{variable}{Character. Variable name to download. e.g., "thetao_mean".}
 
-\item{date_min}{Date or character. Minimum date. e.g., \code{1993-01-01}.}
+\item{date_min}{Date or character. Minimum date. e.g., "1993-01-01".}
 
-\item{date_max}{Date or character. Maximum date. e.g., \code{2022-12-01}.}
+\item{date_max}{Date or character. Maximum date. e.g., "2022-12-01".}
 
 \item{lon}{Numeric vector of length 2. Longitude range (min, max).
 e.g., \code{c(-180, 179.75)}.}
@@ -40,8 +39,8 @@ e.g., \code{c(-180, 179.75)}.}
 \item{lat}{Numeric vector of length 2. Latitude range (min, max).
 e.g., \code{c(-80, 90)}.}
 
-\item{depth}{List of length 2. Depth range in meters (min, max).
-e.g., \code{list(0.51, 199.79)}.}
+\item{depth}{Numeric vector of length 2. Depth range in meters (min, max).
+e.g., \code{c(0.51, 199.79)}.}
 
 \item{out_name}{Character. Output file name ending with \code{.nc}.}
 }
