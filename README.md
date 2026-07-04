@@ -23,12 +23,12 @@ remotes::install_github("HarryZhang0130/OceanSDM",dependencies = TRUE)
 
 `OceanSDM` is an R package for building **Species Distribution Models (SDMs)** for marine organisms. It provides a streamlined workflow to:
   
-  - Download environmental layers (temperature, salinity, etc.)
+- Download environmental layers (temperature, salinity, etc.)
 - Clean and reduce sampling bias in occurrence records
 - Build ensemble SDMs using multiple algorithms
 - Map predictions and evaluate model performance
 - Generate response curves and variable importance plots
-- For detailed tutorials, see "OceanSDM_mannual.pdf".
+- For detailed tutorials, see "OceanSDM_mannual_v1.0.0.pdf".
 
 ## Functions
 
