@@ -12,13 +12,12 @@
 #' @param toler_quantiles Numeric vector of length 2. Quantiles for tolerance range
 #'   (default: c(0.01, 0.99)).
 #' @param pref_method Character. Method for preference range: `"FWHM"` (Full Width at
-#'   Half Maximum) or `"quantile"` (default: `"FWHM"`).
+#'   Half Maximum) or `"quantile"`.
 #' @param pref_quantiles Numeric vector of length 2. Quantiles for preference range
 #'   when `pref_method = "quantile"` (default: c(0.25, 0.75)).
 #' @param variable_name Character. Name of the variable (e.g., `"Temperature"`,
 #'   `"Dissolved Oxygen"`) for plotting (default: `"Environmental variable"`).
 #' @param unit Character. Unit of the variable (e.g., `"°C"`, `"mg/L"`) for plotting
-#'   (default: `"℃"`).
 #' @param seed Integer. Random seed for reproducibility (default: 123).
 #' @param width Numeric. Plot width in inches (default: 6).
 #' @param height Numeric. Plot height in inches (default: 5).
@@ -145,7 +144,7 @@ niche_tag <- function(
     pref_method = c("FWHM", "quantile"),
     pref_quantiles = c(0.25, 0.75),
     variable_name = "Environmental variable",
-    unit = "℃",
+    unit = NULL,
     seed = 123,
     width = 6,
     height = 5,

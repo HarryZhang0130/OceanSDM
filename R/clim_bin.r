@@ -11,8 +11,8 @@
 #' @param time_type Character. Type of temporal aggregation. One of `"month"`,
 #'   `"quarter"`, or `"season"`.
 #' @param var_name Character. Variable name in NetCDF. If not found exactly,
-#'   the function will attempt to match (case‑insensitive) and warn. Default is
-#'   `"thetao_mean"`.
+#'   the function will attempt to match (case‑insensitive) and warn.
+#'   e.g., `"thetao_mean"`.
 #' @param save_path Character. Directory path where output files will be saved.
 #' @param na_value Numeric. Value to replace `NA`. Default `-9999`.
 #'

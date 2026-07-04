@@ -28,7 +28,7 @@ niche_occ(
 
 \item{toler_quantiles}{vector. Quantiles for tolerance range (default: c(0.01, 0.99)).}
 
-\item{pref_method}{character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile" (default: "FWHM").}
+\item{pref_method}{character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile".}
 
 \item{pref_quantiles}{vector. Quantiles for preference range when pref_method = "quantile" (default: c(0.25, 0.75)).}
 

@@ -5,17 +5,17 @@
 #' @param out_dir Character. Directory where output data will be stored.
 #' @param productId Character. ID of the CMEMS product (see dataset user manual
 #'   in the CMEMS product webpage).
-#'   Default is `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
+#'   e.g., `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
 #' @param variable Character. Variable name to download, prefixed with "--variable ".
-#'   Default is " --variable thetao_mean".
-#' @param date_min Date or character. Minimum date. Default is `1993-01-01`.
-#' @param date_max Date or character. Maximum date. Default is `2022-12-01`.
+#'   e.g., " --variable thetao_mean".
+#' @param date_min Date or character. Minimum date. e.g., `1993-01-01`.
+#' @param date_max Date or character. Maximum date. e.g., `2022-12-01`.
 #' @param lon Numeric vector of length 2. Longitude range (min, max).
-#'   Default is `c(-180, 179.75)`.
+#'   e.g., `c(-180, 179.75)`.
 #' @param lat Numeric vector of length 2. Latitude range (min, max).
-#'   Default is `c(-80, 90)`.
+#'   e.g., `c(-80, 90)`.
 #' @param depth List of length 2. Depth range in meters (min, max).
-#'   Default is `list(0.51, 199.79)`.
+#'   e.g., `list(0.51, 199.79)`.
 #' @param out_name Character. Output file name ending with `.nc`.
 #'
 #' @return No return value. The function downloads a NetCDF file to `out_dir`.
@@ -53,28 +53,6 @@ env_download<-function(path_cmems_tool,out_dir,productId,variable,
   # set COPERNICUSMARINE_SERVICE_USERNAME=your_username # set up username
   # set COPERNICUSMARINE_SERVICE_PASSWORD=your_password # set up password
   # copernicusmarine login
-  # Default values
-  if (missing(productId)) {
-    productId <- "cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"
-  }
-  if (missing(date_min)) {
-    date_min <- lubridate::ymd(19930101)
-  }
-  if (missing(date_max)) {
-    date_max <- lubridate::ymd(20231201)
-  }
-  if (missing(lon)) {
-    lon <- c(-180, 179.75)
-  }
-  if (missing(lat)) {
-    lat <- c(-80, 90)
-  }
-  if (missing(depth)) {
-    depth <- list(0.51, 199.79)
-  }
-  if (missing(variable)) {
-    variable <- " --variable thetao_mean"
-  }
 
   # Ensure output directory exists
   if (!dir.exists(out_dir)) {

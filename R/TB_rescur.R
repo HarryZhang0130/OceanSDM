@@ -6,7 +6,7 @@
 #'
 #' @param root_path Character. Path to the root directory containing time period subfolders.
 #' @param time_type Character. Type of time periods: "quarter", "month", "season".
-#'   Default "quarter". Ignored if `time_folders` is provided.
+#'   Ignored if `time_folders` is provided.
 #' @param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
 #'   If provided, overrides `time_type`.
 #' @param time_names Optional character vector of labels for the time periods
@@ -16,13 +16,13 @@
 #' @param colors Optional character vector of colors, length equal to number of
 #'   time periods. Defaults to `grDevices::hcl.colors()` with palette "Set3"
 #'   (or `rainbow` if more than 12).
-#' @param ncol Integer. Number of columns in the panel. Default: 4.
+#' @param ncol Integer. Number of columns in the panel.
 #' @param nrow Integer. Number of rows in the panel. Automatically calculated if `NULL`.
 #' @param y_label Character. y‑axis label. Default: `"Habitat suitability"`.
 #' @param legend_position Character. Legend position: `"vertical"` (stacked legend
-#'   in the last panel) or `"bottom"` (unified legend at the bottom). Default: `"vertical"`.
-#' @param width Numeric. Plot width in inches for saving. Default: 8.
-#' @param height Numeric. Plot height in inches for saving. Default: 4.
+#'   in the last panel) or `"bottom"` (unified legend at the bottom).
+#' @param width Numeric. Plot width in inches for saving.
+#' @param height Numeric. Plot height in inches for saving.
 #' @param save_path Character. Path to save the plot (TIFF format). If `NULL`,
 #'   the plot is not saved.
 #'
@@ -37,18 +37,18 @@
 #' @importFrom grid unit
 #' @importFrom grDevices rainbow tiff dev.off hcl.colors
 TB_rescur <- function(root_path,
-                      time_type = "quarter",
-                      time_folders = NULL,
-                      time_names = NULL,
-                      file_name = "rcurve.csv",
-                      colors = NULL,
-                      ncol = 4,
-                      nrow = NULL,
+                      time_type,
+                      time_folders,
+                      time_names,
+                      file_name,
+                      colors,
+                      ncol,
+                      nrow,
                       y_label = "Habitat suitability",
                       legend_position = c("vertical", "bottom"),
-                      width = 8,
-                      height = 4,
-                      save_path = NULL) {
+                      width,
+                      height,
+                      save_path ) {
 
   # ---- 1. Determine time periods (folders) ----
   legend_position <- match.arg(legend_position)

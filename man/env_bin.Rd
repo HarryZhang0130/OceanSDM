@@ -43,7 +43,7 @@ will be saved.}
 \item{date_max}{Date (or character convertible to Date). End date.}
 
 \item{lag_days}{Numeric. Number of days ocean seasonality lags behind
-atmospheric seasonality. Default is \code{76} if missing.}
+atmospheric seasonality. e.g., \code{76} if missing.}
 
 \item{temporal_bin}{Character. How a year will be split. One of \code{"monthly"},
 \code{"quarterly"}, or \code{"seasonal"}.}

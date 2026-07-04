@@ -13,7 +13,7 @@
 #' @param date_min Date (or character convertible to Date). Start date.
 #' @param date_max Date (or character convertible to Date). End date.
 #' @param lag_days Numeric. Number of days ocean seasonality lags behind
-#'   atmospheric seasonality. Default is `76` if missing.
+#'   atmospheric seasonality. e.g., `76` if missing.
 #' @param temporal_bin Character. How a year will be split. One of `"monthly"`,
 #'   `"quarterly"`, or `"seasonal"`.
 #' @return No return value. The function writes raster files (ASCII format) to

@@ -61,19 +61,19 @@ ws_occ<-ob_data(
 
 @param out_dir Character. Directory where output data will be stored.
 
-@param productId Character. ID of the CMEMS product (see dataset user manual in the CMEMS product webpage). Default is `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
+@param productId Character. ID of the CMEMS product (see dataset user manual in the CMEMS product webpage).
 
-@param variable Character. Variable name to download, prefixed with "--variable ". Default is " --variable thetao_mean".
+@param variable Character. Variable name to download, prefixed with "--variable ".
 
-@param date_min Date or character. Minimum date. Default is `1993-01-01`.
+@param date_min Date or character. Minimum date.
 
-@param date_max Date or character. Maximum date. Default is `2022-12-01`.
+@param date_max Date or character. Maximum date.
 
-@param lon Numeric vector of length 2. Longitude range (min, max). Default is `c(-180, 179.75)`.
+@param lon Numeric vector of length 2. Longitude range (min, max).
 
-@param lat Numeric vector of length 2. Latitude range (min, max). Default is `c(-80, 90)`.
+@param lat Numeric vector of length 2. Latitude range (min, max).
 
-@param depth List of length 2. Depth range in meters (min, max). Default is `list(0.51, 199.79)`.
+@param depth List of length 2. Depth range in meters (min, max). e.g., `list(0.51, 199.79)`.
 
 @param out_name Character. Output file name ending with `.nc`.
 
@@ -192,7 +192,7 @@ To predict the dynamic distributions of marine species across the 2D space, all 
 
 @param date_max Date (or character convertible to Date). End date.
 
-@param lag_days Numeric. Number of days ocean seasonality lags behind atmospheric seasonality. Default is `76` if missing.
+@param lag_days Numeric. Number of days ocean seasonality lags behind atmospheric seasonality.
 
 @param temporal_bin Character. How a year will be split. One of `"monthly"`, `"quarterly"`, or `"seasonal"`.
 ```{r env_bin, cache=TRUE}
@@ -426,7 +426,7 @@ Sometimes, you may need to check if all your species occurrences fall within the
 
 @param range_path Character. Path to the range map shapefile (must contain a column `sci_name`).
 
-@param buffer_km Numeric. Buffer distance (km) around the range map to consider points as valid (default: 100).
+@param buffer_km Numeric. Buffer distance (km) around the range map to consider points as valid (e.g., 100).
 
 @param plot Logical. If `TRUE`, generate a map showing point categories. Default `FALSE`.
 
@@ -469,7 +469,7 @@ Previous SDM studies often find that some occurrences were not spatially matched
 
 @param predictor_raster_path Character. File path to the standard raster layer (e.g., an ASCII or GeoTIFF file) used as reference for correction.
 
-@param max_distance_km Numeric. Maximum distance (in kilometres) that a point will be adjusted to the nearest grid cell with non-`NA` value. Default is `10`.
+@param max_distance_km Numeric. Maximum distance (in kilometres) that a point will be adjusted to the nearest grid cell with non-`NA` value. e.g., `10`.
 
 @param out_dir Character. Full file path (including `.csv` extension) where the corrected occurrence data will be saved. If the directory does not exist, it will be created. If a directory path is given instead, a default filename corrected_occurrences.csv` will be appended.
 
@@ -648,7 +648,7 @@ Please note that the spatial bias still exist but have been largely reduced. A c
 
 @param max_dist numeric. Maximum distance (unit: meters) to be used in calculating Moran's I. Default is NULL
 
-@param block_size numeric. Block size (unit: meters) can be user defined if you did not want to find it through the time-consuming auto-process based on Moran's I curve
+@param block_size numeric. Block size (unit: meters) can be user defined if you did not want to find it through the time-consuming auto-process based on Moran's I curve.
 
 @param algorithms character vector. sdm methods.
 
@@ -746,9 +746,9 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param root_path Character. Path to the root directory containing time period subfolders.
 
 @param time_type Character. Type of time periods: "quarter", "month", "season".
-  Default "quarter". Ignored if `time_folders` is provided.
+  Ignored if `time_folders` is provided.
 
-@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")). If provided, overrides `time_type`.
+@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")). If provided, overrides `time_type`. Otherwise, set it to NULL.
 
 @param time_labels Optional character vector of labels for the time periods
   (used in plot row labels). Default uses folder names.
@@ -770,7 +770,7 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param root_path Character. Path to the root directory containing time period subfolders.
 
 @param time_type Character. Type of time periods: "quarter", "month", "season".
-  Default "quarter". Ignored if `time_folders` is provided.
+  Ignored if `time_folders` is provided.
 
 @param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).  If provided, overrides `time_type`.
 
@@ -795,9 +795,9 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param group_label Character. Label for the temporal bins (e.g., Quarters, Seasons, Months).
   If NULL, automatically set based on `time_type`.
 
-@param width Numeric. Plot width in inches for saving. Default: 8.
+@param width Numeric. Plot width in inches for saving.
 
-@param height Numeric. Plot height in inches for saving. Default: 6.
+@param height Numeric. Plot height in inches for saving.
 
 @param save_path Character. Path to save the plot (TIFF format). 
   If NULL, the plot is not saved.
@@ -807,10 +807,10 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param root_path Character. Path to the root directory containing time period subfolders.
 
 @param time_type Character. Type of time periods: "quarter", "month", "season".
-  Default "quarter". Ignored if `time_folders` is provided.
+  Ignored if `time_folders` is provided.
 
-@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
-  If provided, overrides `time_type`.
+@param time_folders Optional character vector of folder names (e.g.,    
+  c("Q1","Q2","Q3","Q4")). If provided, overrides `time_type`. Otherwise, set it to NULL.
 
 @param time_names Optional character vector of labels for the time periods
   (used in legend). Default uses folder names.
@@ -822,7 +822,7 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
   time periods. Defaults to `grDevices::hcl.colors()` with palette "Set3"
   (or `rainbow` if more than 12).
 
-@param ncol Integer. Number of columns in the panel. Default: 4.
+@param ncol Integer. Number of columns in the panel.
 
 @param nrow Integer. Number of rows in the panel. Automatically calculated if `NULL`.
 
@@ -831,9 +831,9 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param legend_position Character. Legend position: `"vertical"` (stacked legend
   in the last panel) or `"bottom"` (unified legend at the bottom). Default: `"vertical"`.
 
-@param width Numeric. Plot width in inches for saving. Default: 8.
+@param width Numeric. Plot width in inches for saving.
 
-@param height Numeric. Plot height in inches for saving. Default: 4.
+@param height Numeric. Plot height in inches for saving.
 
 @param save_path Character. Path to save the plot (TIFF format). If `NULL`,
   the plot is not saved.
@@ -857,6 +857,7 @@ imp_plot <- TB_varimp(root_path = "F:/whaleshark_sdm/result_sdm",
                       time_type = "quarter",
                       file_name = "VarImportance_Table.csv",
                       time_names = time_names,
+                      time_folders = NULL,
                       method = "AUCtest",
                       colors = c("1st Quarter" = "#FFB347",
                                  "2nd Quarter" = "#4CAF50",
@@ -873,6 +874,7 @@ print(imp_plot)
 #  Plot response curves panel (legend at the bottom)
 res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
                       time_type = "quarter",
+                      time_folders = NULL,
                       file_name = "rcurve_Table.csv",
                       colors = c("1st Quarter" = "#FFB347",
                                  "2nd Quarter" = "#4CAF50",
@@ -880,7 +882,7 @@ res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
                                  "4th Quarter" = "#5D9BEC"),
                       time_names = time_names,
                       legend_position = "vertical",
-                      ncol=4,
+                      ncol=4, nrow =NULL,
                       width = 9,
                       height = 4,
                       save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
@@ -916,7 +918,7 @@ When tag-based temperature data are unavailable, niche_occ() implements an alter
   (default: c(0.01, 0.99)).
 
 @param pref_method Character. Method for preference range: `"FWHM"` (Full Width at
-  Half Maximum) or `"quantile"` (default: `"FWHM"`).
+  Half Maximum) or `"quantile"`.
 
 @param pref_quantiles Numeric vector of length 2. Quantiles for preference range
   when `pref_method = "quantile"` (default: c(0.25, 0.75)).
@@ -924,8 +926,7 @@ When tag-based temperature data are unavailable, niche_occ() implements an alter
 @param variable_name Character. Name of the variable (e.g., `"Temperature"`,
   `"Dissolved Oxygen"`) for plotting (default: `"Environmental variable"`).
 
-@param unit Character. Unit of the variable (e.g., `"°C"`, `"mg/L"`) for plotting
-  (default: `"℃"`).
+@param unit Character. Unit of the variable (e.g., `"°C"`, `"mg/L"`) for plotting.
 
 @param seed Integer. Random seed for reproducibility (default: 123).
 
@@ -1025,7 +1026,7 @@ Here, based on the pelagic trait of the focal species, I used niche_occ() to ext
 
 @param toler_quantiles vector. Quantiles for tolerance range (default: c(0.01, 0.99)).
 
-@param pref_method character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile" (default: "FWHM").
+@param pref_method character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile".
 
 @param pref_quantiles vector. Quantiles for preference range when pref_method = "quantile".   Default: c(0.25, 0.75)).
 
@@ -1046,7 +1047,7 @@ Here, based on the pelagic trait of the focal species, I used niche_occ() to ext
 @param width numeric. Plot width in inches (default: 6).
 
 @param height numeric. Plot height in inches (default: 5).
-```{r niche_occ,cache=TRUE}
+```{r niche_occ,cache=FALSE}
 occ_path<-system.file("extdata", "R_typus_qs.txt", package = "OceanSDM")
 
 var_name<-"thetao_mean"
@@ -1114,7 +1115,7 @@ Before predicting vertical distributions across space and time, clim_bin() calcu
 
 @param time_type Character. Type of temporal aggregation. One of `"month"`, `"quarter"`, or `"season"`.
 
-@param var_name Character. Variable name in NetCDF. If not found exactly, the function will attempt to match (case‑insensitive) and warn. Default is `"thetao_mean"`,referring to mean temperature.
+@param var_name Character. Variable name in NetCDF. If not found exactly, the function will attempt to match (case‑insensitive) and warn. e.g., `"thetao_mean"`,referring to mean temperature.
 
 @param save_path Character. Directory path where output files will be saved.
 
