@@ -10,6 +10,7 @@
 #'
 #' @return A list with the following components:
 #'   \item{volum}{Data frame containing temporal bins and computed volume (m³).}
+#'   \item{area}{Data frame containing temporal bins and computed area (m²).}
 #'   \item{depth_range}{Combined plot of range maps (returned by `cowplot::plot_grid`).}
 #'   \item{depth_min}{Combined plot of minimum depth maps.}
 #'   \item{depth_max}{Combined plot of maximum depth maps.}
@@ -117,13 +118,13 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
     cell_area <- res_m[1] * res_m[2]
     total_depth <- sum(terra::values(r_proj), na.rm = TRUE)
     volume <- total_depth * cell_area
-    volume_results[i] <- volume
-    cat(" Volume:", format(volume, scientific = FALSE), "m³\n")
+    volume_results[i] <- volume/1e9
+    cat(" Volume:", format(volume, scientific = FALSE), "km³\n")
   }
 
-  volum_data <- data.frame(Temporal_bin = time_labels, Volume = volume_results)
+  volum_data <- data.frame(Temporal_bin = time_labels, Volume_km3 = volume_results)
   cat("\n=== Habitat Volume by", time_type, "===\n")
-  for (i in 1:n_time) cat(time_labels[i], ":", format(volume_results[i], scientific = FALSE), "cubic meters\n")
+  for (i in 1:n_time) cat(time_labels[i], ":", format(volume_results[i], scientific = FALSE), "cubic kilometers\n")
   cat("================================\n\n")
 
   # ----- Land background -----
@@ -370,11 +371,10 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
         return(factor)
       }
 
-      Volume_km3 <- volum_data$Volume / 1e9
-      vol_factor <- choose_factor(Volume_km3)
+      vol_factor <- choose_factor(volum_data$Volume_km3)
       area_factor <- choose_factor(area_data$Area_km2)
 
-      vol_display <- Volume_km3 / vol_factor
+      vol_display <- volum_data$Volume_km3 / vol_factor
       area_display <- area_data$Area_km2 / area_factor
 
       scale_ratio <- max(vol_display) / max(area_display)
@@ -383,8 +383,7 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
       plot_data <- data.frame(
         Temporal_bin = factor(time_labels, levels = time_labels),
         Volume = vol_display,
-        Area = area_transformed,
-        Area_raw = area_data$Area_km2
+        Area = area_transformed
       )
 
       vol_exp <- log10(vol_factor)
@@ -429,6 +428,7 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
   return(
     list(
       volum = volum_data,
+      area = area_data,
       depth_range = p_range,
       depth_min = p_min,
       depth_max = p_max,

@@ -29,6 +29,7 @@ Default: \code{c("lightblue", "darkblue")}.}
 \value{
 A list with the following components:
 \item{volum}{Data frame containing temporal bins and computed volume (m³).}
+\item{area}{Data frame containing temporal bins and computed area (m²).}
 \item{depth_range}{Combined plot of range maps (returned by \code{cowplot::plot_grid}).}
 \item{depth_min}{Combined plot of minimum depth maps.}
 \item{depth_max}{Combined plot of maximum depth maps.}
