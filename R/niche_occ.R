@@ -65,7 +65,8 @@ niche_occ <- function(
 
   # Match preference method argument
   pref_method <- match.arg(pref_method)
-
+  # Check save path
+  if (!dir.exists(save_path)) dir.create(save_path, recursive = TRUE)
   # Read occurrence data
   df <- utils::read.table(occ_path, header = TRUE)
 

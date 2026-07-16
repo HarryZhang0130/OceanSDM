@@ -154,7 +154,8 @@ niche_tag <- function(
   pref_method <- match.arg(pref_method)
 
   base::set.seed(seed)
-
+  # Check save path
+  if (!dir.exists(save_path)) dir.create(save_path, recursive = TRUE)
   # Check global_bins format
   if (!all(c("bin_lower", "bin_upper") %in% colnames(global_bins))) {
     stop("global_bins must contain columns: bin_lower, bin_upper")
