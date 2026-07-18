@@ -56,3 +56,19 @@ subdirectories of \code{out_dir} (e.g., \code{out_dir/Jan/thetao_mean.asc},
 \description{
 Create temporally binned predictor layer according to species traits
 }
+\examples{
+\donttest{
+## sea surface height
+env_bin(sp_trait="pelagic",
+       env_path="F:/cmems/IndoWPac_slh_1m_y2015_y2024.nc",
+       out_dir="F:/whaleshark_sdm/bin",
+       var_name="zos_mean",
+       lon_min=90,
+       lon_max=180,
+       lat_min=-41,
+       lat_max=40,
+       date_min=ymd(20150101),
+       date_max = ymd(20241201),
+       temporal_bin="quarterly")
+       }
+}

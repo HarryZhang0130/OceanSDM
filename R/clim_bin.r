@@ -17,6 +17,19 @@
 #' @param na_value Numeric. Value to replace `NA`. Default `-9999`.
 #'
 #' @return Invisibly returns a character vector of all generated file paths.
+#' @examples
+#' \donttest{
+#' quarter_files<-c(
+#'   Q1=system.file("extdata","result_sdm/Q1/predicted_presence.asc",package = "OceanSDM"),
+#'   Q2=system.file("extdata","result_sdm/Q2/predicted_presence.asc",package = "OceanSDM"),
+#'   Q3=system.file("extdata","result_sdm/Q3/predicted_presence.asc",package = "OceanSDM"),
+#'   Q4=system.file("extdata","result_sdm/Q4/predicted_presence.asc",package = "OceanSDM"))
+#'  presence_asc <- lapply(quarter_files, terra::rast)
+#'  save_path<-"F:/whaleshark_sdm/4D"
+#'  temp_nc<-system.file("extdata","cms/IndoWPac_temp_10m_y2024.asc",package = "OceanSDM") #' Replace to your own directory for 0-200m
+#'  clim_bin(temp_nc, presence_asc, time_type = "quarter",
+#'          save_path=save_path, na_value = -9999)
+#'  }
 #' @export
 clim_bin <- function(clim_nc, presence_asc, time_type = c("month", "quarter", "season"),
                      var_name = "thetao_mean",

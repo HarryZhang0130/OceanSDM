@@ -27,10 +27,10 @@ Create the benthic layer of an environmental factor
 }
 \examples{
 \donttest{
-# Ensure you have downloaded a NetCDF file with multiple depth layers
-input_nc <- "C:/cmems/Pacific_temp_05_50_2011.nc"
-output_nc <- "C:/cmems/Pacific_bent_temp_05_50_2011.nc"
-var_name <- "thetao_mean"
+# Load a system NetCDF file with multiple depth layers
+input_nc <- system.file("extdata","cms/IndoWPac_temp_10m_y2024.nc", package = "OceanSDM")
+output_nc <- "C:/cmems/Pacific_bent_temp_05_50_2011.nc" # Change this to your own path
+var_name <- "thetao_mean" # This refers to monthly mean temperature
 benthic_layer(input_nc, output_nc, var_name)
 }
 }

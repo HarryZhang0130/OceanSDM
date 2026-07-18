@@ -50,3 +50,20 @@ A data frame (invisibly) with the corrected occurrences.
 \description{
 Correct occurrence coordinates based on a standard raster layer of the predictor dataset
 }
+\examples{
+\donttest{
+ev_layer<-system.file("extdata", "Q1/Depth.asc", package = "OceanSDM")
+occ_range<-system.file("extdata", "R_typus_r.csv", package = "OceanSDM")
+output_path<-"F:/whaleshark_sdm/occ/R_typus_adj.csv"
+corrected_ob <- correct_ob(
+  occ_path = occ_range,
+    predictor_raster_path = ev_layer,
+      max_distance_km = 56,
+        out_dir = output_path,
+          verbose = TRUE, plot=T,
+            xlim = c(90, 179.975),
+              ylim = c(-41, 40)
+              )
+summary(corrected_ob)
+}
+}

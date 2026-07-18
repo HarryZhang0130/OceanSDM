@@ -26,6 +26,22 @@
 #' @importFrom sf st_as_sf
 #' @importFrom ggplot2 ggplot geom_polygon geom_raster geom_sf scale_fill_gradient scale_color_manual coord_sf theme_bw theme labs element_blank element_text
 #' @importFrom grDevices tiff dev.off
+#' @examples
+#' \donttest{
+#' ev_layer<-system.file("extdata", "Q1/Depth.asc", package = "OceanSDM")
+#' occ_range<-system.file("extdata", "R_typus_r.csv", package = "OceanSDM")
+#' output_path<-"F:/whaleshark_sdm/occ/R_typus_adj.csv"
+#' corrected_ob <- correct_ob(
+#'   occ_path = occ_range,
+#'     predictor_raster_path = ev_layer,
+#'       max_distance_km = 56,
+#'         out_dir = output_path,
+#'           verbose = TRUE, plot=T,
+#'             xlim = c(90, 179.975),
+#'               ylim = c(-41, 40)
+#'               )
+#' summary(corrected_ob)
+#' }
 #' @export
 correct_ob <- function(occ_path, predictor_raster_path,
                        max_distance_km = NULL, out_dir, verbose = TRUE,

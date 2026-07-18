@@ -41,11 +41,12 @@
 #' @importFrom grDevices tiff dev.off
 #' @examples
 #' \donttest{
-#' map_plot<-TB_map(root_path = "F:/whaleshark_sdm/result_sdm",
-#' time_type = "quarter",
-#' output_width = 8,
-#' output_height = 12,
-#' output_filename_base = "SDM_quarterly")
+#' sdm_path<-system.file("extdata/result_sdm",package = "OceanSDM")
+#' map_plot<-TB_map(root_path = sdm_path,
+#'                 time_type = "quarter",
+#'                 output_width = 8,
+#'                 output_height = 12,
+#'                 output_filename_base = "SDM_quarterly")
 #' print(map_plot)
 #' }
 #' @export

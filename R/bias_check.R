@@ -25,21 +25,24 @@
 #'     number of temporal groups).}
 #' @examples
 #' \donttest{
-#' colnames(corrected_ob)
-#' occ_ob<-corrected_ob[,c(1:8)]
-#' colnames(occ_ob)[2:3]<-c("y","x")
-#' ## Add the quarter column
 #' library(dplyr)
+#' ## Read input data or skip this line if you have run the section 1.4
+#' corrected_ob<-read.csv(system.file("extdata", "R_typus_adj.csv", package = "OceanSDM"))
+#' ## Read input data or skip this line if you have run the section 1.4
+#' range_path <-system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
+#' colnames(corrected_ob)
+#' occ_ob<-corrected_ob[,c(1:7)] # removed unuseful columns
+#' colnames(occ_ob)[2:3]<-c("y","x") # rename latitude and longitude columns
+#' #### For the quarterly SDMs
 #' occ_ob2 <- occ_ob %>%
-#'  mutate(
-#'      quarter = case_when(
-#'            month %in% 1:3   ~ "Q1",
-#'               month %in% 4:6   ~ "Q2",
-#'                 month %in% 7:9  ~ "Q3",
-#'                  month %in% 10:12 ~ "Q4",
-#'                   TRUE ~ NA_character_
-#'                   ))%>% filter(!is.na(quarter))
-#' range_path<-"F:/whaleshark_sdm/range_map/R_typus_wip2.shp"
+#'   mutate(
+#'       quarter = dplyr::case_when(
+#'             month %in% 1:3   ~ "Q1",
+#'                   month %in% 4:6   ~ "Q2",
+#'                      month %in% 7:9  ~ "Q3",
+#'                        month %in% 10:12 ~ "Q4",
+#'                          TRUE ~ NA_character_
+#'                          ))%>% dplyr::filter(!is.na(quarter))
 #' bias_test <- bias_check(occ_data=occ_ob,
 #'                         temporal_level="quarter",
 #'                         spatial_method="range_map",

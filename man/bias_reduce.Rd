@@ -39,11 +39,29 @@ Reduce spatial and temporal sampling bias
 }
 \examples{
 \donttest{
+library(dplyr)
+## Read input data or skip this line if you have run the section 1.4
+corrected_ob<-read.csv(system.file("extdata", "R_typus_adj.csv", package = "OceanSDM"))
+## Read input data or skip this line if you have run the section 1.4
+range_path <-system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
+colnames(corrected_ob)
+occ_ob<-corrected_ob[,c(1:7)] # removed unuseful columns
+colnames(occ_ob)[2:3]<-c("y","x") # rename latitude and longitude columns
+#### For the quarterly SDMs
+occ_ob2 <- occ_ob \%>\%
+  mutate(
+      quarter = dplyr::case_when(
+            month \%in\% 1:3   ~ "Q1",
+                  month \%in\% 4:6   ~ "Q2",
+                     month \%in\% 7:9  ~ "Q3",
+                       month \%in\% 10:12 ~ "Q4",
+                         TRUE ~ NA_character_
+                         ))\%>\% dplyr::filter(!is.na(quarter))
 occ_thinned<-bias_reduce(occ_data=occ_ob2,
-bias_result=bias_test,
-min_dist_km = 56,
-thin_reps = 30,
-temporal_level = "quarter",
-seed = 123)
+               bias_result=bias_test, # bias_test is an object of the bias_check()
+                min_dist_km = 56,
+                thin_reps = 30,
+                temporal_level = "quarter",
+                seed = 123)
 }
 }
