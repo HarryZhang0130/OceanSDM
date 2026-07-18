@@ -27,7 +27,6 @@
 #'   the plot is not saved.
 #'
 #' @return A combined `ggplot` object (cowplot::ggdraw).
-#' @export
 #'
 #' @importFrom dplyr bind_rows mutate filter
 #' @importFrom ggplot2 ggplot aes geom_ribbon geom_line coord_cartesian labs
@@ -36,6 +35,25 @@
 #' @importFrom cowplot plot_grid ggdraw draw_plot draw_grob
 #' @importFrom grid unit
 #' @importFrom grDevices rainbow tiff dev.off hcl.colors
+#' @examples
+#' \donttest{
+#' res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
+#' time_type = "quarter",
+#' time_folders = NULL,
+#' file_name = "rcurve_Table.csv",
+#' colors = c("1st Quarter" = "#FFB347",
+#'            "2nd Quarter" = "#4CAF50",
+#'           "3rd Quarter" = "#FF6B4A",
+#'           "4th Quarter" = "#5D9BEC"),
+#'           time_names = time_names,
+#'           legend_position = "vertical",
+#'           ncol=4, nrow =NULL,
+#'           width = 9,
+#'           height = 4,
+#'           save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
+#'           print(res_plot)
+#' }
+#' @export
 TB_rescur <- function(root_path,
                       time_type,
                       time_folders,

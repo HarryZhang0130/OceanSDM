@@ -59,3 +59,13 @@ Expected folder structure (for a given time period folder, e.g., "Q1"):
 \item {root_path}/{period_folder}/predicted_presence.asc      (binary map)
 }
 }
+\examples{
+\donttest{
+map_plot<-TB_map(root_path = "F:/whaleshark_sdm/result_sdm",
+time_type = "quarter",
+output_width = 8,
+output_height = 12,
+output_filename_base = "SDM_quarterly")
+print(map_plot)
+}
+}

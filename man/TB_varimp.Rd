@@ -67,3 +67,28 @@ directory, where each subfolder corresponds to a time period (e.g., Q1, Q2, etc.
 The CSV file must contain columns 'variables', 'corTest', and 'AUCtest' (or other
 columns as specified by 'method'). Missing variables in any period are filled with 0.
 }
+\examples{
+\donttest{
+# Name each temporal bin
+time_names <- c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")
+#  Plot variable importance
+imp_plot <- TB_varimp(root_path = "F:/whaleshark_sdm/result_sdm",
+                      time_type = "quarter",
+                      file_name = "VarImportance_Table.csv",
+                      time_names = time_names,
+                      time_folders = NULL,
+                      method = "AUCtest",
+                      colors = c("1st Quarter" = "#FFB347",
+                                 "2nd Quarter" = "#4CAF50",
+                                 "3rd Quarter" = "#FF6B4A",
+                                 "4th Quarter" = "#5D9BEC"),
+                      title = NULL,
+                      x_label = "Importance",
+                      y_label = NULL,
+                      group_label= "Quarters",
+                      width = 8,
+                      height = 6,
+                      save_path = "F:/whaleshark_sdm/result_sdm/variable_importance.tif")
+print(imp_plot)
+}
+}

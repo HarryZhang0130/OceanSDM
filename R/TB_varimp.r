@@ -35,6 +35,30 @@
 #'   scale_fill_manual scale_fill_hue theme_minimal theme_classic theme element_text
 #' @importFrom grDevices tiff dev.off
 #' @importFrom utils read.csv
+#' @examples
+#' \donttest{
+#' # Name each temporal bin
+#' time_names <- c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")
+#' #  Plot variable importance
+#' imp_plot <- TB_varimp(root_path = "F:/whaleshark_sdm/result_sdm",
+#'                       time_type = "quarter",
+#'                       file_name = "VarImportance_Table.csv",
+#'                       time_names = time_names,
+#'                       time_folders = NULL,
+#'                       method = "AUCtest",
+#'                       colors = c("1st Quarter" = "#FFB347",
+#'                                  "2nd Quarter" = "#4CAF50",
+#'                                  "3rd Quarter" = "#FF6B4A",
+#'                                  "4th Quarter" = "#5D9BEC"),
+#'                       title = NULL,
+#'                       x_label = "Importance",
+#'                       y_label = NULL,
+#'                       group_label= "Quarters",
+#'                       width = 8,
+#'                       height = 6,
+#'                       save_path = "F:/whaleshark_sdm/result_sdm/variable_importance.tif")
+#' print(imp_plot)
+#' }
 #' @export
 TB_varimp <- function(root_path,
                       time_type = "quarter",

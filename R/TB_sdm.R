@@ -32,14 +32,14 @@
 #'   \item{optimal_block}{Identified optimal block size}
 #'   \item{collinearity_report}{Collinearity analysis report}
 #' @import Metrics sf sdm blockCV ggplot2
-#' @export
 #'
 #' @examples
 #' \donttest{
-#' d_env <- "F:/whaleshark_sdm/bin/Q1"
-#' d_prj <- "F:/whaleshark_sdm/bin/proj"
-#' d_occ <- "F:/whaleshark_sdm/occ/R_typus_q1.txt"
-#' d_res <- "F:/whaleshark_sdm/result_sdm/Q1"
+#' d_occ <- system.file("extdata", "R_typus_q1.txt", package = "OceanSDM")
+#' d_env <- system.file("extdata", "Q1", package = "OceanSDM")
+#' d_prj<-system.file("extdata", "proj", package = "OceanSDM")
+#' d_res <- "F:/whaleshark_sdm/result_sdm/Q1" # Change to your own directory
+#' library(sdm) # initializing the internal state of 'sdm' package
 #' sdm_q1 <- TB_sdm(
 #'   env_path = d_env,
 #'   occ_path = d_occ,
@@ -50,18 +50,19 @@
 #'   pre_abs_ratio = 1,
 #'   collinearity_thresh = 0.7,
 #'   remove_collinear = TRUE,
-#'   algorithms = c("brt", "rf", "maxent", "svm"),
+#'   block_size = 500000,
+#'   algorithms = c("brt", "rf", "svm"),
 #'   cv_method = "random",
 #'   n_folds = 5,
 #'   var.importance = TRUE,
 #'   response.curve = TRUE,
 #'   ensemble.method = "weighted",
 #'   ensemble.stat = "TSS",
-#'   expr = 'auc > 0.8 & tss > 0.6',
 #'   ncore = 1,
 #'   seed = 123,
 #'   proj_path = d_prj)
 #' }
+#' @export
 TB_sdm <- function(env_path,
                    occ_path,
                    res_path,

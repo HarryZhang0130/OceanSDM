@@ -63,3 +63,20 @@ If \code{plot = TRUE}, a map is generated showing:
 The original species range polygon is shown as a red dashed border.
 }
 }
+\examples{
+\donttest{
+occ_path <-system.file("extdata", "R_typus.csv", package = "OceanSDM")
+range_path <-system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
+result <- range_check_single(
+                  species_name="Rhincodon typus",
+                  occ_data = occ_path,
+                  range_path = range_path,
+                  buffer_km = 100,
+                  plot = T,
+                  xlim = c(90, 179.975),
+                  ylim = c(-41, 40)
+                  )
+occ_range<-result$valid_points
+write.csv(occ_range,"F:/whaleshark_sdm/occ/R_typus_r.csv",row.names = F)
+}
+}

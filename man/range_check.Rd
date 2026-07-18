@@ -5,34 +5,22 @@
 \title{Check if occurrences of multiple species fall within a defined range map with a buffer
 and remove species with limited data}
 \usage{
-range_check(
-  occ_path,
-  range_path,
-  buffer_km = 100,
-  distshore_km = 10,
-  min_points = 100
-)
+range_check(occ_path, range_path, buffer_km)
 }
 \arguments{
 \item{occ_path}{Character. Path to the occurrence CSV file. Must contain columns:
-\code{Species}, \code{decimalLongitude}, \code{decimalLatitude} (or \code{x}, \code{y}). Adjust extraction accordingly.}
+\code{species}, \code{decimalLongitude}, \code{decimalLatitude} (or \code{x}, \code{y}). Adjust extraction accordingly.}
 
 \item{range_path}{Character. Path to the species range map (shapefile) containing
 a column \code{sci_name} with species scientific names.}
 
 \item{buffer_km}{Numeric. Buffer distance (in kilometres) around the range map
-to consider occurrences as valid. Default is \code{100}.}
-
-\item{distshore_km}{Numeric. Distance to shore (km) used in \code{range_check_single}
-(if applicable). Default is \code{10}.}
-
-\item{min_points}{Numeric. Minimum number of valid points required per species.
-Species with fewer valid points are flagged as problematic. Default is \code{100}.}
+to consider occurrences as valid.}
 }
 \value{
 A list containing:
 \item{successful.sp.checklist}{Character vector of species that passed the
-range check and have at least \code{min_points} valid occurrences.}
+range check.}
 \item{valid.occ}{Data frame of valid occurrence points (those falling within
 the buffered range).}
 \item{problematic.sp.checklist}{Character vector of species that either
@@ -46,21 +34,16 @@ and remove species with limited data
 \details{
 This function requires a helper function \code{range_check_single} (not provided here)
 to process individual species. The user must define \code{range_check_single} with
-arguments \verb{(sci_name, species_data, range_path, buffer_km, distshore_km)} returning
+arguments \verb{(sci_name, species_data, range_path, buffer_km)} returning
 a list with elements \code{valid_points}, \code{invalid_points}, and \code{error} (or \code{NULL}).
 }
 \examples{
 \donttest{
-get_shape_path <- function() {
-system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
-}
-shp_path <- get_shape_path()
+occ_path <-system.file("extdata", "R_typus.csv", package = "OceanSDM")
+shp_path <- system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
 result <- range_check(
-  occ_path = "F:/occurrences.csv",
-  range_path = shp_path,
-  buffer_km = 100,
-  distshore_km = 10,
-  min_points = 100
+  occ_path = occ_path,
+  range_path = shp_path
 )
 }
 }

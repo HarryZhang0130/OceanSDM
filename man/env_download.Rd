@@ -52,17 +52,18 @@ Download environmental layers from CMEMS
 }
 \examples{
 \donttest{
-path_cmems_tool <- "C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"
-out_dir <- "C:/shark/cmems"
+path_cms<-"C:/shark/copernicusmarine.exe" # replace to your own directory
+out_dir <- "F:/whaleshark_sdm/cmems" # replace to your own directory
 productId <- "cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"
 variable <- " --variable thetao_mean"
 date_min <- lubridate::ymd(20110101)
 date_max <- lubridate::ymd(20120101)
 lon <- c(100, 130)
 lat <- c(15, 30)
-depth <- list(0.51, 50)
+depth <- c(0.51, 50)
 out_name <- "Pacific_temp_05_50_2011.nc"
-env_download(path_cmems_tool, out_dir, productId, variable,
-             date_min, date_max, lon, lat, depth, out_name)
+env_download(path_cms,out_dir,productId,variable,
+            date_min,date_max,lon,lat,
+            depth,out_name)
 }
 }

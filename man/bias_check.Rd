@@ -7,6 +7,7 @@
 bias_check(
   occ_data,
   temporal_level,
+  lag_days,
   spatial_method,
   world_path,
   range_path,
@@ -19,6 +20,8 @@ bias_check(
 
 \item{temporal_level}{Character. Temporal level at which temporal sampling
 bias is to be tested. One of \code{month}, \code{quarter}, or \code{season}.}
+
+\item{lag_days}{Numeric. Number of days ocean seasonality lags behind.}
 
 \item{spatial_method}{Character. Method used to generate species habitat area
 for spatial random sampling. One of \code{convex_hull} or \code{range_map}.}

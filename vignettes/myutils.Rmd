@@ -1264,6 +1264,7 @@ TPD_quarter<-list(
   "F:/whaleshark_sdm/4D/TPD/Q4/Q4_max_depth.asc",
   "F:/whaleshark_sdm/4D/TPD/Q4/Q4_depth_range.asc"
 )
+
 TTD_quarter<-list(
   "F:/whaleshark_sdm/4D/TTD/Q1/Q1_min_depth.asc",
   "F:/whaleshark_sdm/4D/TTD/Q1/Q1_max_depth.asc",
@@ -1278,13 +1279,50 @@ TTD_quarter<-list(
   "F:/whaleshark_sdm/4D/TTD/Q4/Q4_max_depth.asc",
   "F:/whaleshark_sdm/4D/TTD/Q4/Q4_depth_range.asc"
 )
+## You can also load the system files instead.
+# TPD_quarter<-list(
+#   system.file("extdata","4D/TPD/Q1/Q1_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q1/Q1_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q1/Q1_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q2/Q2_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q2/Q2_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q2/Q2_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q3/Q3_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q3/Q3_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q3/Q3_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q4/Q4_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q4/Q4_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TPD/Q4/Q4_depth_range.asc",package = "OceanSDM")
+# )
+# 
+# TTD_quarter<-list(
+#   system.file("extdata","4D/TTD/Q1/Q1_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q1/Q1_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q1/Q1_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q2/Q2_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q2/Q2_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q2/Q2_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q3/Q3_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q3/Q3_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q3/Q3_depth_range.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q4/Q4_min_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q4/Q4_max_depth.asc",package = "OceanSDM"),
+#   system.file("extdata","4D/TTD/Q4/Q4_depth_range.asc",package = "OceanSDM")
+# )
 save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## for Preferred Depth (PD)
 save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## for Tolerable Depth (TD)
+## Run the code in subsection 2.1, you will get the predicted presence maps for each quarter. Here I loaded them from my local path.
 quarter_files<-c(
   Q1="F:/whaleshark_sdm/result_sdm/Q1/predicted_presence.asc",
   Q2="F:/whaleshark_sdm/result_sdm/Q2/predicted_presence.asc",
   Q3="F:/whaleshark_sdm/result_sdm/Q3/predicted_presence.asc",
   Q4="F:/whaleshark_sdm/result_sdm/Q4/predicted_presence.asc")
+## You can also load the system files instead.
+# quarter_files<-c(
+#   Q1=system.file("extdata","result_sdm/Q1/predicted_presence.asc",package = "OceanSDM"),
+#   Q2=system.file("extdata","result_sdm/Q2/predicted_presence.asc",package = "OceanSDM"),
+#   Q3=system.file("extdata","result_sdm/Q3/predicted_presence.asc",package = "OceanSDM"),
+#   Q4=system.file("extdata","result_sdm/Q4/predicted_presence.asc",package = "OceanSDM"))
 
 result_TPD <- plot_stat_4D(
   file_list = TPD_quarter,
@@ -1324,6 +1362,10 @@ area<-result_TPD$area
 library(ggplot2)
 volum<-read.csv("F:/whaleshark_sdm/4D/volume_data.csv")
 area<-read.csv("F:/whaleshark_sdm/4D/area_data.csv")
+## You can load the system file instead.
+# volum<-read.csv(system.file("extdata","4D/volume_data.csv",package = "OceanSDM"))
+# area<-read.csv(system.file("extdata","4D/area_data.csv",package = "OceanSDM"))
+
 # convert raw values to [0,1]
 choose_factor <- function(x) {
         if (all(x == 0)) return(1)

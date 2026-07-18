@@ -63,3 +63,22 @@ This function reads response curve CSV files from subfolders of a root
 directory, where each subfolder corresponds to a time period (e.g., Q1, Q2, etc.).
 Each CSV file must contain columns: 'variable', 'Value', 'Response', 'lower', 'upper'.
 }
+\examples{
+\donttest{
+res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
+time_type = "quarter",
+time_folders = NULL,
+file_name = "rcurve_Table.csv",
+colors = c("1st Quarter" = "#FFB347",
+           "2nd Quarter" = "#4CAF50",
+          "3rd Quarter" = "#FF6B4A",
+          "4th Quarter" = "#5D9BEC"),
+          time_names = time_names,
+          legend_position = "vertical",
+          ncol=4, nrow =NULL,
+          width = 9,
+          height = 4,
+          save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
+          print(res_plot)
+}
+}

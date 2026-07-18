@@ -35,6 +35,22 @@
 #' @importFrom sf st_read st_as_sf st_crs st_buffer st_intersects st_make_valid st_bbox
 #' @importFrom dplyr filter bind_rows
 #' @importFrom rnaturalearth ne_countries
+#' @examples
+#' \donttest{
+#' occ_path <-system.file("extdata", "R_typus.csv", package = "OceanSDM")
+#' range_path <-system.file("extdata", "R_typus_wip2.shp", package = "OceanSDM")
+#' result <- range_check_single(
+#'                   species_name="Rhincodon typus",
+#'                   occ_data = occ_path,
+#'                   range_path = range_path,
+#'                   buffer_km = 100,
+#'                   plot = T,
+#'                   xlim = c(90, 179.975),
+#'                   ylim = c(-41, 40)
+#'                   )
+#' occ_range<-result$valid_points
+#' write.csv(occ_range,"F:/whaleshark_sdm/occ/R_typus_r.csv",row.names = F)
+#' }
 #' @export
 range_check_single <- function(species_name, occ_data, range_path,
                                buffer_km = NULL,

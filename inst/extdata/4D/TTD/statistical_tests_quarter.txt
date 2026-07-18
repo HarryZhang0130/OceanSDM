@@ -1,0 +1,66 @@
+Statistical Test Report for QUARTER Depth Statistics
+======================================================
+
+### MINIMUM ###
+Kruskal-Wallis test:
+
+	Kruskal-Wallis rank sum test
+
+data:  value by time
+Kruskal-Wallis chi-squared = NaN, df = 3, p-value = NA
+
+
+--------------------------------------------------------------------------------
+
+### MAXIMUM ###
+Kruskal-Wallis test:
+
+	Kruskal-Wallis rank sum test
+
+data:  value by time
+Kruskal-Wallis chi-squared = 3536.8, df = 3, p-value < 2.2e-16
+
+
+Dunn's post-hoc test (Bonferroni adjusted):
+# A tibble: 6 × 9
+  .y.   group1 group2    n1    n2 statistic        p    p.adj p.adj.signif
+* <chr> <chr>  <chr>  <int> <int>     <dbl>    <dbl>    <dbl> <chr>       
+1 value Q1     Q2     29174 18815    -19.5  7.21e-85 4.33e-84 ****        
+2 value Q1     Q3     29174 15762     44.8  0        0        ****        
+3 value Q1     Q4     29174 17602      2.56 1.06e- 2 6.35e- 2 ns          
+4 value Q2     Q3     18815 15762     57.9  0        0        ****        
+5 value Q2     Q4     18815 17602     19.7  1.12e-86 6.69e-86 ****        
+6 value Q3     Q4     15762 17602    -38.2  0        0        ****        
+
+--------------------------------------------------------------------------------
+
+### RANGE ###
+Kruskal-Wallis test:
+
+	Kruskal-Wallis rank sum test
+
+data:  value by time
+Kruskal-Wallis chi-squared = 3536.8, df = 3, p-value < 2.2e-16
+
+
+Dunn's post-hoc test (Bonferroni adjusted):
+# A tibble: 6 × 9
+  .y.   group1 group2    n1    n2 statistic        p    p.adj p.adj.signif
+* <chr> <chr>  <chr>  <int> <int>     <dbl>    <dbl>    <dbl> <chr>       
+1 value Q1     Q2     29174 18815    -19.5  7.21e-85 4.33e-84 ****        
+2 value Q1     Q3     29174 15762     44.8  0        0        ****        
+3 value Q1     Q4     29174 17602      2.56 1.06e- 2 6.35e- 2 ns          
+4 value Q2     Q3     18815 15762     57.9  0        0        ****        
+5 value Q2     Q4     18815 17602     19.7  1.12e-86 6.69e-86 ****        
+6 value Q3     Q4     15762 17602    -38.2  0        0        ****        
+
+--------------------------------------------------------------------------------
+
+
+### HABITAT VOLUME ( QUARTER ) ###
+Volume computed from depth_range rasters (projected to Mollweide, m³):
+Q1 : 4878511  m³
+Q2 : 2884377  m³
+Q3 : 3262322  m³
+Q4 : 3110712  m³
+======================================================

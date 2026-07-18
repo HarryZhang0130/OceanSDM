@@ -30,9 +30,11 @@
 #'
 #' @examples
 #' \donttest{
+#' occ_path<-system.file("extdata","R_typus_q1.txt",package = "OceanSDM")
+#' env_path<-system.file("extdata","cmems/IndoWPac_temp_1m_y2015_y2024.nc",package = "OceanSDM")
 #' niche_occ(
-#'   occ_path = "F:/whaleshark_sdm/occ/R_typus_q1.txt",
-#'   env_path = "F:/whaleshark_sdm/cmems/IndoWPac_temp_1m_y2015_y2024.nc",
+#'   occ_path = occ_path,
+#'   env_path = env_path,
 #'   toler_quantiles = c(0.01, 0.99),
 #'   pref_method = "FWHM",
 #'   pref_quantiles = NULL,

@@ -14,6 +14,20 @@
 #' @param ncores Integer. Number of cores for parallel processing (uses `pbapply`). Default: 1.
 #'
 #' @return Invisibly returns a character vector of all generated file paths.
+#' @examples
+#' \donttest{
+#' df<-read.csv(system.file("extdata","summary_niche_fit.csv",package = "OceanSDM"))
+#' PTR<-df[2:3,2] # preferred temperature range
+#' TTR<-df[4:5,2] # tolerable temperature range
+#' temp_bin_path<-"F:/whaleshark_sdm/4D" # the same path as the save_path of the clim_bin()
+#' save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## new path for storing data of Preferred Depth (PD)
+#' save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## new path for storing data of Tolerable Depth (TD)
+#' TTD_quarter<-TB_depth(temp_bin_path, TTR, time_type = "quarter",
+#'                      layer_option="top",
+#'                      save_path_TTD, na_value = -9999,
+#'                         use_makima = TRUE,
+#'                          N_cells = 50)
+#' }
 #' @export
 TB_depth <- function(temp_bin_path, PTR, time_type = c("month", "quarter", "season"),
                      layer_option = "top", save_path, na_value = -9999,

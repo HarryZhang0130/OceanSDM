@@ -39,6 +39,15 @@
 #' @importFrom sf st_union
 #' @importFrom cowplot plot_grid ggdraw draw_plot
 #' @importFrom grDevices tiff dev.off
+#' @examples
+#' \donttest{
+#' map_plot<-TB_map(root_path = "F:/whaleshark_sdm/result_sdm",
+#' time_type = "quarter",
+#' output_width = 8,
+#' output_height = 12,
+#' output_filename_base = "SDM_quarterly")
+#' print(map_plot)
+#' }
 #' @export
 TB_map <- function(root_path = "F:/whaleshark_sdm/result",
                    time_type = "quarter",

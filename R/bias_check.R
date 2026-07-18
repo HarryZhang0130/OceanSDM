@@ -4,6 +4,7 @@
 #'   `Species`, `x`, `y`, `year`, `month`, `day`.
 #' @param temporal_level Character. Temporal level at which temporal sampling
 #'   bias is to be tested. One of `month`, `quarter`, or `season`.
+#' @param lag_days Numeric. Number of days ocean seasonality lags behind.
 #' @param spatial_method Character. Method used to generate species habitat area
 #'   for spatial random sampling. One of `convex_hull` or `range_map`.
 #' @param world_path Character. File path to a world map shapefile (required when
@@ -48,6 +49,7 @@
 #' @export
 bias_check <- function(occ_data,
                        temporal_level,
+                       lag_days,
                        spatial_method,
                        world_path,
                        range_path,
