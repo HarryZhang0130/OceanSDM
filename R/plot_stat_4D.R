@@ -101,6 +101,8 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
   for (i in 1:n_time) {
     idx <- range_indices[i]
     r <- data_list[[idx]]
+    standard_crs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    terra::crs(r) <- standard_crs
     cat(" Processing", time_labels[i], "depth_range raster...\n")
     is_longlat <- terra::is.lonlat(r)
     if (is_longlat) {
@@ -346,11 +348,19 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
       warning("length(presence_files) != n_time. Skipping overlay plot.")
     } else {
       cat("\nCalculating area from presence rasters...\n")
+      # Get reference CRS from the first raster in file_list
+      ref_raster <- data_list[[1]]
+      ref_crs <- terra::crs(ref_raster)
+
       presence_rast <- lapply(presence_files, terra::rast)
       moll_crs <- "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
       area_km2 <- numeric(n_time)
       for (i in 1:n_time) {
         r <- presence_rast[[i]]
+        # Set presence layer with the standard WGS84 coordinate system.
+        standard_crs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+        terra::crs(r) <- standard_crs
+        # Now project to Mollweide using the defined CRS
         r_proj <- terra::project(r, moll_crs, method = "near")
         cells_1 <- which(terra::values(r_proj) == 1)
         res_m <- terra::res(r_proj)
