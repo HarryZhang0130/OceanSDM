@@ -9,7 +9,8 @@ plot_stat_4D(
   save_path,
   time_type = "quarter",
   presence_files = NULL,
-  plot_overlay = TRUE
+  plot_overlay = TRUE,
+  sample_fraction = 0.2
 )
 }
 \arguments{
@@ -21,65 +22,28 @@ plot_stat_4D(
 
 \item{presence_files}{Character vector (optional). Paths to binary presence rasters.}
 
-\item{plot_overlay}{Logical. Whether to create volume‑area overlay plot.}
+\item{plot_overlay}{Logical. Whether to create volume-area overlay plot.}
 
-\item{map_colors}{Character vector of length 2, specifying low and high colors for depth maps.
-Default: \code{c("lightblue", "darkblue")}.}
+\item{sample_fraction}{Numeric. Fraction of complete cells to sample for statistical tests. Default: 0.2 (20\\%).}
 }
 \value{
 A list with the following components:
-\item{volum}{Data frame containing temporal bins and computed volume (m³).}
-\item{area}{Data frame containing temporal bins and computed area (m²).}
-\item{depth_range}{Combined plot of range maps (returned by \code{cowplot::plot_grid}).}
+\item{volum}{Data frame containing temporal bins and computed volume (km³).}
+\item{area}{Data frame containing temporal bins and computed area (km²).}
+\item{depth_range}{Combined plot of range maps.}
 \item{depth_min}{Combined plot of minimum depth maps.}
 \item{depth_max}{Combined plot of maximum depth maps.}
-\item{overlay_plot}{A \code{ggplot} object of the volume‑area overlay plot (if \code{presence_files} provided and \code{plot_overlay = TRUE}), otherwise \code{NULL}.}
+\item{overlay_plot}{A \code{ggplot} object of the volume-area overlay plot.}
 }
 \description{
 Plot depth statistics and compute habitat volume (quarterly, monthly, or seasonal)
 }
 \examples{
 \donttest{
-# Define file lists for thermally preferred depth (TPD) and tolerable depth (TTD)
-TPD_quarter<-list(
-  system.file("extdata","4D/TPD/Q1/Q1_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q1/Q1_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q1/Q1_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q2/Q2_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q3/Q3_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TPD/Q4/Q4_depth_range.asc",package = "OceanSDM")
-)
-
-TTD_quarter<-list(
-  system.file("extdata","4D/TTD/Q1/Q1_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q1/Q1_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q1/Q1_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q2/Q2_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q3/Q3_depth_range.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_min_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_max_depth.asc",package = "OceanSDM"),
-  system.file("extdata","4D/TTD/Q4/Q4_depth_range.asc",package = "OceanSDM")
-)
-
+TPD_quarter <- list(...)
 save_path_TPD <- "F:/whaleshark_sdm/4D/TPD"
-save_path_TTD <- "F:/whaleshark_sdm/4D/TTD"
-quarter_files<-c(
-  Q1=system.file("extdata","result_sdm/Q1/predicted_presence.asc",package = "OceanSDM"),
-  Q2=system.file("extdata","result_sdm/Q2/predicted_presence.asc",package = "OceanSDM"),
-  Q3=system.file("extdata","result_sdm/Q3/predicted_presence.asc",package = "OceanSDM"),
-  Q4=system.file("extdata","result_sdm/Q4/predicted_presence.asc",package = "OceanSDM"))
-# Run the function for preferred depth and tolerable depth
-volum_TPD <- plot_stat_4D(TPD_quarter, save_path_TPD, time_type = "quarter",quarter_files)
-volum_TTD <- plot_stat_4D(TTD_quarter, save_path_TTD, time_type = "quarter",quarter_files)
+quarter_files <- c(...)
+result <- plot_stat_4D(TPD_quarter, save_path_TPD, time_type = "quarter",
+                       presence_files = quarter_files, sample_fraction = 0.2)
 }
 }
