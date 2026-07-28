@@ -8,9 +8,9 @@ niche_tag(
   data_list,
   global_bins,
   samples_per_article = 10000,
-  toler_quantiles = c(0.01, 0.99),
-  pref_method = c("FWHM", "quantile"),
-  pref_quantiles = c(0.25, 0.75),
+  pref_prob = 0.5,
+  toler_prob = 0.95,
+  bw_method = c("nrd0", "nrd", "SJ", "bcv", "ucv"),
   variable_name = "Environmental variable",
   unit = NULL,
   seed = 123,
@@ -29,14 +29,28 @@ defining standardized bins.}
 \item{samples_per_article}{Numeric. Number of simulated samples per article for
 standardization (default: 10000).}
 
-\item{toler_quantiles}{Numeric vector of length 2. Quantiles for tolerance range
-(default: c(0.01, 0.99)).}
+\item{pref_prob}{Numeric. Proportion of area on each side of the mode to include in the
+preference range. Default is 0.5 (50\% of each side's area).}
 
-\item{pref_method}{Character. Method for preference range: \code{"FWHM"} (Full Width at
-Half Maximum) or \code{"quantile"}.}
+\item{toler_prob}{Numeric. Proportion of area on each side of the mode to include in the
+tolerance range. Default is 0.95 (95\% of each side's area).}
 
-\item{pref_quantiles}{Numeric vector of length 2. Quantiles for preference range
-when \code{pref_method = "quantile"} (default: c(0.25, 0.75)).}
+\item{bw_method}{Character. Bandwidth selection method for kernel density estimation.
+Options are:
+\itemize{
+\item \code{"nrd0"}: Silverman's rule-of-thumb (default in \code{stats::density}).
+Fast and stable, suitable for unimodal, near-normal distributions, but may
+oversmooth multimodal or skewed distributions.
+\item \code{"nrd"}: Silverman's rule-of-thumb (variant). Slightly different
+scaling factor, similar properties to \code{"nrd0"}.
+\item \code{"SJ"}: Sheather–Jones direct plug-in estimator. Adaptive to
+data structure, preferred for complex/multimodal distributions, but
+computationally more intensive.
+\item \code{"bcv"}: Biased cross-validation. Tends to produce smaller bandwidths,
+useful for fine-scale features, but can be unstable.
+\item \code{"ucv"}: Unbiased cross-validation. Tends to produce larger bandwidths,
+more stable than \code{"bcv"} but computationally intensive.
+}}
 
 \item{variable_name}{Character. Name of the variable (e.g., \code{"Temperature"},
 \code{"Dissolved Oxygen"}) for plotting (default: \code{"Environmental variable"}).}
@@ -64,8 +78,9 @@ A list of class \code{niche_range} containing:
 \item{article_standardized_data}{Standardized data per article}
 \item{variable_name}{User-provided variable name}
 \item{unit}{User-provided unit}
-\item{pref_method}{Method used for preference range}
-\item{pref_quantiles}{Preference quantiles (if applicable)}
+\item{pref_prob_used}{Proportion used for preference range on each side}
+\item{toler_prob_used}{Proportion used for tolerance range on each side}
+\item{bw_method}{Bandwidth selection method used}
 }
 \description{
 Based on multi-article binned data with different binning schemes.
@@ -73,8 +88,7 @@ Supports any continuous environmental variable (temperature, dissolved oxygen, e
 }
 \examples{
 \donttest{
-# Example data: 7 articles with temperature percentage distributions
-# Article 1 (largest sample size, used as reference for global bins)
+# Example data: articles with temperature percentage distributions
 article1_df <- data.frame(
   bin_lower = c(0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39),
   bin_upper = c(3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42),
@@ -82,7 +96,6 @@ article1_df <- data.frame(
   article_weight = 50
 )
 
-# Article 2
 article2_df <- data.frame(
   bin_lower = c(10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30),
   bin_upper = c(12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5),
@@ -91,81 +104,27 @@ article2_df <- data.frame(
   article_weight = 8
 )
 
-# Article 3
-article3_df <- data.frame(
-  bin_lower = c(10, 12, 14, 16, 18, 20, 22, 24, 26, 28),
-  bin_upper = c(12, 14, 16, 18, 20, 22, 24, 26, 28, 30),
-  percentage = c(0.0065445, 0.0302054, 0.0436468, 0.0436468, 0.0436468,
-                 0.06207209, 0.1258558, 0.2550846, 0.2601188, 0.1291784),
-  article_weight = 1
-)
-
-# Article 4
-article4_df <- data.frame(
-  bin_lower = c(0, 2, 5, 10, 15, 17.5, 20, 22, 25, 27, 29, 31),
-  bin_upper = c(2, 5, 10, 15, 17.5, 20, 22, 25, 27, 29, 31, 33),
-  percentage = c(0.00039048, 0.00002092, 0.00055783, 0.02545097, 0.04554678,
-                 0.08029258, 0.1846834, 0.4400787, 0.1277708, 0.08686102,
-                 0.00594088, 0.00240564),
-  article_weight = 15
-)
-
-# Article 5
-article5_df <- data.frame(
-  bin_lower = c(0, 5, 10, 15, 18, 20, 22, 24, 26, 28, 30, 32, 34),
-  bin_upper = c(5, 10, 15, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36),
-  percentage = c(0.00002896, 0.00004234, 0.00013009, 0.00012676, 0.00011109,
-                 0.00018206, 0.00055804, 0.00443287, 0.0041829, 0.00020489,
-                 0, 0, 0),
-  article_weight = 27
-)
-
-# Article 6
-article6_df <- data.frame(
-  bin_lower = c(4, 8, 12, 16, 20, 22, 24, 26, 28),
-  bin_upper = c(8, 12, 16, 20, 22, 24, 26, 28, 30),
-  percentage = c(0.000188, 0.000075, 0.000063, 0.000088, 0.000151,
-                 0.001217, 0.003111, 0.004027, 0.001116),
-  article_weight = 17
-)
-
-# Article 7
-article7_df <- data.frame(
-  bin_lower = c(10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5),
-  bin_upper = c(12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5, 35),
-  percentage = c(0, 0.00029412, 0.00011765, 0.00011765, 0.00019608,
-                 0.00060785, 0.00372549, 0.0037647, 0.00115686, 0.00001961),
-  article_weight = 17
-)
-
-# Combine all articles into a list
-data_list <- list(article1_df, article2_df, article3_df, article4_df,
-                  article5_df, article6_df, article7_df)
-
-# Define unified global binning scheme (based on Article 1)
+data_list <- list(article1_df, article2_df)
 global_bins <- article1_df[, c("bin_lower", "bin_upper")]
 
-# Run niche estimation
+# Use Sheather-Jones bandwidth (default)
 temp_fit <- niche_tag(
   data_list = data_list,
   global_bins = global_bins,
-  samples_per_article = 10000,
-  toler_quantiles = c(0.01, 0.99),
-  pref_method = "FWHM",
-  pref_quantiles = NULL,
+  bw_method = "SJ",
+  pref_prob = 0.5,
+  toler_prob = 0.95,
   variable_name = "Temperature",
-  unit = "°C",
-  seed = 123,
-  width = 6,
-  height = 5,
-  save_path = NULL
+  unit = "°C"
 )
 
-# View summary
-print(temp_fit)
-temp_fit$summary
-
-# Generate plot
-plot(temp_fit)
+# Use Silverman's rule-of-thumb for faster computation
+temp_fit_fast <- niche_tag(
+  data_list = data_list,
+  global_bins = global_bins,
+  bw_method = "nrd0",
+  pref_prob = 0.5,
+  toler_prob = 0.95
+)
 }
 }

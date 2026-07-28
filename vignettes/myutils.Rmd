@@ -33,6 +33,20 @@ library(lubridate) # for date format
 # 1. Prepare species and environmental data 
 ## 1.1 Download species data from GBIF and OBIS using ob_data() 
 The Global Biodiversity Information Faculty (GBIF) and Ocean Biodiversity Information System (OBIS) are the two major sources of species occurrences at the global scale. The function ob_data() helps users automatically download the geo-referenced occurrences of either a single or many species. Here I demonstrated with an example of smaller temporal and spatial ranges than the real case in the paper to save the running time for creating this vignette.
+
+  Here below are the parameters used in the ob_data().
+  
+@param key Character. The species scientific name (e.g., "Rhincodon typus").
+
+@param sp_geometry Character. The geographic range of the study area as a WKT polygon
+  (e.g., "POLYGON ((20 -41, 20 40, 180 40, 180 -41, 20 -41))").
+
+@param start_date Character. Start date used in `robis::occurrence()`, format "YYYY-MM-DD".
+
+@param end_date Character. End date used in `robis::occurrence()`, format "YYYY-MM-DD".
+
+@param event_date Character. Year range used in `rgbif::occ_search()`, format "YYYY-MM-DD,YYYY-MM-DD".
+
 ```{r occurrence, dev='png', cache=TRUE}
  ws_occ<-ob_data(
     key<-'Rhincodon typus' ,# It can be a vector of the Latin names of all focal species
@@ -46,6 +60,33 @@ write.csv(ws_occ$sp_occ,"F:/whaleshark_sdm/occ/R_typus.csv",row.names = F)
 
 ## 1.2 Download .nc files of marine environmental predictors using env_download() 
 The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). But please note you must first install the copernicusmarine toolbox (and configure its running environment with conda or other softwares, see details at https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-installation) on which this function was built. Here I only showed a case of extracting sea surface temperature at smaller temporal and geographic ranges than the real case I used in the paper.
+
+  Here below are the parameters used in the env_download().
+  
+@param path_cmems_tool Character. Path to the copernicusmarine executable,
+  e.g. `"/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe"`.
+
+@param out_dir Character. Directory where output data will be stored.
+
+@param productId Character. ID of the CMEMS product (see dataset user manual
+  in the CMEMS product webpage). e.g., `"cmems_mod_glo_phy-mnstd_my_0.25deg_P1M-m"`.
+
+@param variable Character. Variable name to download. e.g., "thetao_mean".
+
+@param date_min Date or character. Minimum date. e.g., "1993-01-01".
+
+@param date_max Date or character. Maximum date. e.g., "2022-12-01".
+
+@param lon Numeric vector of length 2. Longitude range (min, max).
+  e.g., `c(-180, 179.75)`.
+
+@param lat Numeric vector of length 2. Latitude range (min, max).
+  e.g., `c(-80, 90)`.
+
+@param depth Numeric vector of length 2. Depth range in meters (min, max).
+  e.g., `c(0.51, 199.79)`.
+
+@param out_name Character. Output file name ending with `.nc`.
 ```{r set up tool path, cache=TRUE}
 ## Set up the path of the cms downloading tool and output directory
 path_cms<-"C:/shark/miniconda/envs/copernicusmarine/Scripts/copernicusmarine.exe" # replace to your own directory
@@ -135,6 +176,36 @@ There is also an R package for downloading CMIP6 data: https://github.com/marine
 
 ### 1.2.4 Prepare temporally-binned predictors using env_bin()
 To predict the dynamic distributions of marine species across the 2D space, all predictors should be aggregated into mean values within the specific temporal bins.  
+
+  Here below are the parameters used in the env_bin().
+  
+@param sp_trait Character. Species vertical habitat use. One of `"pelagic"`,
+  `"benthic"`, or `"benthopelagic"`.
+
+@param env_path Character. Path to the downloaded CMEMS NetCDF file.
+
+@param out_dir Character. Directory where the temporally‑binned raster layers
+  will be saved.
+
+@param var_name Character. Name of the variable (refer to CMEMS user manual).
+
+@param lon_min Numeric. Minimum longitude (western boundary).
+
+@param lon_max Numeric. Maximum longitude (eastern boundary).
+
+@param lat_min Numeric. Minimum latitude (southern boundary).
+
+@param lat_max Numeric. Maximum latitude (northern boundary).
+
+@param date_min Date (or character convertible to Date). Start date.
+
+@param date_max Date (or character convertible to Date). End date.
+
+@param lag_days Numeric. Number of days ocean seasonality lags behind
+  atmospheric seasonality. Default `76` if missing.
+
+@param temporal_bin Character. How a year will be split. One of `"monthly"`,
+  `"quarterly"`, or `"seasonal"`.
 ```{r env_bin, cache=FALSE}
 gc() # clear the R environment 
 ## sea surface temperature (Note this is a simplified example of using downloaded data in 1.2.1)
@@ -357,6 +428,29 @@ Please note that you need to add the depth_mean.asc sub-folders (e.g., Q1, Q2, Q
 ```
 ## 1.3 Check occurrence coordinates against species range map with range_check_single() (optional) #############
 Sometimes, you may need to check if all your species occurrences fall within the species range map. You can use range_check_single() for a single species, or range_check() for multiple taxa.
+
+  Here below are the parameters used in the range_check_single().
+ 
+@param species_name Character. Scientific name of the species.
+
+@param occ_data Either a data frame with columns `decimalLongitude`, `decimalLatitude`,
+  or a character string path to a CSV file containing those columns.
+
+@param range_path Character. Path to the range map shapefile (must contain a column `sci_name`).
+
+@param buffer_km Numeric. Buffer distance (km) around the range map to consider
+  points as valid.
+
+@param plot Logical. If `TRUE`, generate a map showing point categories. Default `FALSE`.
+
+@param plot_file Character. Optional file path to save the plot as TIFF (e.g., "plot.tif").
+  If `NULL`, the plot is displayed in the graphics device.
+
+@param xlim Numeric vector of length 2 (min, max) for longitude limits. If `NULL`,
+  automatically determined from the buffered range.
+
+@param ylim Numeric vector of length 2 (min, max) for latitude limits. If `NULL`,
+  automatically determined from the buffered range.
 ```{r range check, cache=FALSE}
 # You can get access to the example occurrences of whale sharks in the system file folder extdata.
 occ_path <-system.file("extdata", "R_typus.csv", package = "OceanSDM")
@@ -380,7 +474,36 @@ occ_range<-rbind(result$valid_points,result$invalid_points) # Note here I kept t
 write.csv(occ_range,"F:/whaleshark_sdm/occ/R_typus_r.csv",row.names = F)
 ```
 ## 1.4 Adjust occurrence coordinates with correct_ob() #############
-Previous SDM studies often find that some occurrences were not spatially matched with the environmental layer, but these points fall within a close distance to the environmental layer. This may result from the resolution uncertainty of the occurrences or the coarse resolution of environmental data. I might be worthy correcting them so they match each other, especially when your focal species are naturally rare and you want to keep as many occurrences as possible. Here I showed an example with temperature of the 1st quarter bin
+Previous SDM studies often find that some occurrences were not spatially matched with the environmental layer, but these points fall within a close distance to the environmental layer. This may result from the resolution uncertainty of the occurrences or the coarse resolution of environmental data. I might be worthy correcting them so they match each other, especially when your focal species are naturally rare and you want to keep as many occurrences as possible. 
+
+  Here below are the parameters used in the correct_ob().
+ 
+@param occ_path Character. Path to occurrence CSV file. Must contain
+  columns `decimalLongitude` and `decimalLatitude` (WGS84 coordinates).
+
+@param predictor_raster_path Character. File path to the standard raster layer
+  (e.g., an ASCII or GeoTIFF file) used as reference for correction.
+
+@param max_distance_km Numeric. Maximum distance (in kilometres) that a point
+  will be adjusted to the nearest grid cell with non-NA value.
+
+@param out_dir Character. **Full file path** (including `.csv` extension) where
+  the corrected occurrence data will be saved. If the directory does not exist,
+  it will be created. If a directory path is given instead, a default filename
+  `corrected_occurrences.csv` will be appended.
+
+@param verbose Logical. If `TRUE`, print progress messages. Default is `TRUE`.
+
+@param plot Logical. If `TRUE`, generate a map showing correction status. Default `FALSE`.
+
+@param plot_file Character. Optional file path to save the plot as TIFF (e.g., "plot.tif"). If `NULL`, the plot is displayed in the graphics device.
+
+@param xlim Numeric vector of length 2 (min, max) for longitude limits. If `NULL`,
+  automatically determined from the raster extent.
+
+@param ylim Numeric vector of length 2 (min, max) for latitude limits. If `NULL`,
+  automatically determined from the raster extent.
+
 ```{r adjust_coordinates, cache=FALSE}
 
 ## Define input paths
@@ -403,7 +526,48 @@ summary(corrected_ob)
 ## 1.5 Check and remove spatio-temporal bias with bias_check() and bias_reduce()
 Spatio-temporal sampling bias is a common issue in global biodiversity data and it degrades model robustness. Here, bias_check() and bias_reduce() are two functions to examine and reduce sampling bias (see details in Supplementary Information), respectively, adapted from the dynamicSDM (Dobson et al., 2023). 
 
-Although designed for highly-mobile marine fish, these data-preparation functions can apply broadly to other marine species.
+  Here below are the parameters used in the bias_check().
+
+@param occ_data Data frame. Species occurrence records. Must contain columns:
+  `Species`, `x`, `y`, `year`, `month`, `day`.
+
+@param temporal_level Character. Temporal level at which temporal sampling
+  bias is to be tested. One of `month`, `quarter`, or `season`.
+
+@param lag_days Numeric. Number of days ocean seasonality lags behind.
+
+@param spatial_method Character. Method used to generate species habitat area
+  for spatial random sampling. One of `convex_hull` or `range_map`.
+
+@param world_path Character. File path to a world map shapefile (required when
+  `spatial_method = "convex_hull"`).
+
+@param range_path Character. File path to a species range map shapefile
+  (required when `spatial_method = "range_map"`). Must contain a column
+  `sci_name`.
+
+@param prj Character. Coordinate reference system to be used for spatial maps,
+  given as a PROJ string (e.g., "+proj=longlat +datum=WGS84").
+
+
+
+  Here below are the parameters used in the bias_reduce().
+
+@param occ_data Data frame. Species occurrence records. Must contain columns:
+  "species", "x", "y", "year", "month", "day".
+
+@param bias_result "BiasCheckResult" object. The result object returned by bias_check.
+
+@param min_dist_km Numeric. Minimum distance (in kilometres) used for spatial thinning.
+
+@param thin_reps Integer. Number of replicate thinning runs.
+
+@param temporal_level Character. Temporal level used to address temporal
+  sampling bias. Must be one of "month", "quarter", or "season".
+
+@param seed Integer. Random seed for reproducibility of thinning and
+  subsampling steps.
+
 ```{r check & remove bias, cache=TRUE}
 library(dplyr)
 ## Read input data or skip this line if you have run the section 1.4
@@ -487,7 +651,53 @@ Please note that the spatial bias still exist but have been largely reduced. A c
 # 2. Build 2D SDMs for each temporal bin and generate related figures ####
 ## 2.1 SDM construction for each quarter with TB_sdm()
 To predict horizontal geographic distributions within each temporal bin, we created a single function TB_sdm(), which leveraged some key functions from the packages sdm  (Naimi & Araújo, 2016), blockCV (Valavi et al., 2018), sf (Pebesma, 2018), terra (Hijmans et al., 2022), and Metrics (Hamner & Frasco, 2012). This function streamlines multiple modelling steps: (i) reading occurrences and predictors, (ii) creating folds for spatial block cross-validation, (iii) pseudo absence generation, (iv) collinearity diagnostic and selection of predictors (in an interactive manner), (v) model calibration and evaluation, (vi) ensemble construction and final prediction, and (vii) variable importance and partial dependence data extraction. It constructs models based on the sdm package, which supports classical statistical methods, machine learning algorithms, envelope methods, as well as their ensembles (see details in Naimi & Araújo, 2016). 
-Here I only run the code for the 1st quarter as an example to create this vignette webpage.
+
+  Here below are the parameters used in the TB_sdm().
+
+@param env_path character. Directory containing environmental rasters (.asc or .tif).
+
+@param occ_path character. Path to occurrence file (tab‑delimited).
+
+@param res_path character. Output directory.
+
+@param species character. Column name for species (not used, kept for compatibility).
+
+@param x character. Column name for longitude.
+
+@param y character. Column name for latitude.
+
+@param pre_abs_ratio numeric. Ratio of presences to pseudo-absences points.
+
+@param collinearity_thresh numeric. Correlation threshold.
+
+@param remove_collinear logical. Remove correlated variables.
+
+@param max_dist numeric. Maximum distance (unit: meters) to be used in calculating Moran's I. Default is NULL
+
+@param block_size numeric. Block size (unit: meters) can be user defined if you did not want to find it through the time-consuming auto-process based on Moran's I curve
+
+@param algorithms character vector. sdm methods.
+
+@param cv_method character. type of assignment of spatial blocks into folds. Can be random (default), systematic, or checkerboard.
+
+@param n_folds integer. Number of folds for spatial cross-validation.
+
+@param var.importance logical.
+
+@param response.curve logical.
+
+@param ensemble.method character. "weighted" or "unweighted".
+
+@param ensemble.stat character. "AUC" or "TSS".
+
+@param expr character. Select which models will be used for ensemble based on AUC and/or TSS, e.g. expr = 'auc > 0.8 & tss > 0.6'.
+
+@param ncore integer. Number of cores.
+
+@param seed integer. Random seed.
+
+@param proj_path character. Optional projection rasters directory.
+
 ```{r build 2D-SDM, cache=TRUE}
 #### Prior to this step, please rename the environmental predictors to make the
 #### the names of variables of each quarterly bin the same as follows:
@@ -559,6 +769,110 @@ sdm_q4<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
 
 ## 2.2 Plot predictive maps, variable importance and species response curves with TB_map(), TB_varimp(), and TB_rescur() #
 After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() automatically produces related figures (i.e., probability and binary maps, variable importance, and species response curves) required for publication.
+
+  Here below are the parameters used in the TB_map().
+
+@param root_path Character. Path to the root directory containing time period subfolders.
+
+@param time_type Character. Type of time periods: "quarter", "month", "season".
+  Default "quarter". Ignored if `time_folders` is provided.
+
+@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
+  If provided, overrides `time_type`.
+
+@param time_labels Optional character vector of labels for the time periods
+  (used in plot row labels). Default uses folder names.
+
+@param output_width Numeric. Width of the output figure in inches. Default: 12.
+
+@param output_height Numeric. Height of the output figure (per figure) in inches.
+  For monthly splits, each figure will have this height. Default: 16.
+
+@param output_filename_base Character. Base name for output TIFF files.
+  For monthly data, additional suffixes are added. Default: "sdm_plot".
+
+@param split_monthly Logical. For monthly data, if TRUE (default), split into
+  three figures (Jan-Apr, May-Aug, Sep-Dec). If FALSE, produce a single figure
+  with 12 rows (very tall).
+
+
+
+  Here below are the parameters used in the TB_varimp().
+
+@param root_path Character. Path to the root directory containing time period subfolders.
+
+@param time_type Character. Type of time periods: "quarter", "month", "season".
+  Default "quarter". Ignored if `time_folders` is provided.
+
+@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
+  If provided, overrides `time_type`.
+
+@param time_names Optional character vector of labels for the time periods
+  (used in legend). Default uses folder names.
+
+@param file_name Character. Name of the variable importance CSV file within each
+  subfolder (e.g., "varimp.csv"). Default: "varimp.csv".
+
+@param method Character. Which importance metric to use: either "corTest" or
+  "AUCtest". Default "AUCtest".
+
+@param colors Optional character vector of colors, length equal to number of
+  time periods. If NULL (default), uses ggplot2's default discrete color palette.
+
+@param title Character. Plot title. Default NULL.
+
+@param x_label Character. x-axis label. Default: "Importance".
+
+@param y_label Character. y-axis label. Default: "Variable".
+
+@param group_label Character. Label for the temporal bins (e.g., Quarters, Seasons, Months).
+  If NULL, automatically set based on `time_type`.
+
+@param width Numeric. Plot width in inches for saving. Default: 8.
+
+@param height Numeric. Plot height in inches for saving. Default: 6.
+
+@param save_path Character. Path to save the plot (TIFF format). If NULL,
+  the plot is not saved.
+
+
+
+  Here below are the parameters used in the TB_rescur().
+
+@param root_path Character. Path to the root directory containing time period subfolders.
+
+@param time_type Character. Type of time periods: "quarter", "month", "season".
+  Ignored if `time_folders` is provided.
+
+@param time_folders Optional character vector of folder names (e.g., c("Q1","Q2","Q3","Q4")).
+  If provided, overrides `time_type`.
+
+@param time_names Optional character vector of labels for the time periods
+  (used in legend). Default uses folder names.
+
+@param file_name Character. Name of the response curve CSV file within each
+  subfolder (e.g., "rcurve.csv"). Default: "rcurve.csv".
+
+@param colors Optional character vector of colors, length equal to number of
+  time periods. Defaults to `grDevices::hcl.colors()` with palette "Set3"
+  (or `rainbow` if more than 12).
+
+@param ncol Integer. Number of columns in the panel.
+
+@param nrow Integer. Number of rows in the panel. Automatically calculated if `NULL`.
+
+@param y_label Character. y‑axis label. Default: `"Habitat suitability"`.
+
+@param legend_position Character. Legend position: `"vertical"` (stacked legend
+  in the last panel) or `"bottom"` (unified legend at the bottom).
+
+@param width Numeric. Plot width in inches for saving.
+
+@param height Numeric. Plot height in inches for saving.
+
+@param save_path Character. Path to save the plot (TIFF format). If `NULL`,
+  the plot is not saved.
+
 ```{r plot 2D-SDM, cache=TRUE}
 ## Clean the R environment
 rm()
@@ -620,10 +934,51 @@ Many studies have indicated that the observed depths of highly-mobile marine fis
 
 An optimal approach to estimate species realized climatic niche is using tag-based frequency of occupancy across in-situ ocean climate bins (e.g., temperature bins), which can be readily extracted from figures (using WebPlotDigitizer) in published tagging studies. niche_tag() estimates tolerable climate range (TCR) and preferred climate range (PCR) from such data. It first combines frequency data across studies using a weighted average approach (see the equation in the paper).
 
-The function then allows users to choose suitable approaches to estimate TCR and PCR. For TCR, users can apply specific percentiles (default, 1st and 99th) of the temperature data, so as for PCR (default, 25th and 75th) (Hertz et al., 1993). The function also provides another option—the full width at half maximum (FWHM) from Gaussian kernel density estimation—to estimate PCR.
+The function then allows users to choose suitable approaches to estimate TCR and PCR.
 
-When tag-based temperature data are unavailable, niche_occ() implements an alternative, trait based approach. It utilizes bias-reduced occurrences to extract real-time temperatures from the depth layer preferred by species (e.g., surface for pelagic fish) rather than depths recorded in biodiversity databases as in the voluModel package. It then allows users to select similar methods (quantiles or FWHM) to estimate TCR and PCR as mentioned for niche_tag().
+  Here below are the parameters used in the niche_tag().
 
+@param data_list List. A list where each element is a data frame from one article,
+containing columns: {bin_lower}, {bin_upper}, {percentage}, {article_weight}.
+
+@param global_bins Data frame. A data frame with columns: {bin_lower}, {bin_upper} defining standardized bins.
+
+@param samples_per_article Numeric. Number of simulated samples per article for
+standardization (default: 10000).
+
+@param pref_prob Numeric. Proportion of area on each side of the mode to include in the
+preference range. Default is 0.5 (50% of each side's area).
+
+@param toler_prob Numeric. Proportion of area on each side of the mode to include in the
+tolerance range. Default is 0.95 (95% of each side's area).
+
+@param bw_method Character. Bandwidth selection method for kernel density estimation.
+Options are:
+  {"nrd0"}: Silverman's rule-of-thumb (default in {stats::density}).
+        Fast and stable, suitable for unimodal, near-normal distributions, but may
+        oversmooth multimodal or skewed distributions.
+  {"nrd"}: Silverman's rule-of-thumb (variant). Slightly different
+        scaling factor, similar properties to {"nrd0"}.
+  {"SJ"}: Sheather–Jones direct plug-in estimator. Adaptive to
+        data structure, preferred for complex/multimodal distributions, but
+        computationally more intensive.
+  {"bcv"}: Biased cross-validation. Tends to produce smaller bandwidths,
+        useful for fine-scale features, but can be unstable.
+  {"ucv"}: Unbiased cross-validation. Tends to produce larger bandwidths,
+        more stable than {"bcv"} but computationally intensive.
+        
+@param variable_name Character. Name of the variable (e.g., {"Temperature"},
+{"Dissolved Oxygen"}) for plotting (default: {"Environmental variable"}).
+
+@param unit Character. Unit of the variable (e.g., {"°C"}, {"mg/L"}) for plotting
+
+@param seed Integer. Random seed for reproducibility (default: 123).
+
+@param width Numeric. Plot width in inches (default: 6).
+
+@param height Numeric. Plot height in inches (default: 5).
+
+@param save_path Character. Directory path to save plot and summary CSV.
 
 ```{r niche_tag,cache=TRUE}
 ## Article 1 data (used as the standard bin given the no. of tagged individuals is the highest)
@@ -689,10 +1044,9 @@ global_bins <- article1_df[,1:2]
 temp_fit<-niche_tag(
     data_list,
     global_bins,
-    samples_per_article = 10000,
-    toler_quantiles = c(0.01, 0.99),
-    pref_method = "FWHM",
-    pref_quantiles =NULL,
+    toler_prob = 0.99,
+    pref_prob = 0.5,
+    bw_method = "nrd0",
     variable_name = "Temperature",
     unit = "℃",
     seed = 123,
@@ -700,39 +1054,83 @@ temp_fit<-niche_tag(
     height = 5,
     save_path = "F:/whaleshark_sdm/temp_fit/tag"
 )
+
 ```
 
 
 ### 3.1.2 Extract temperature data from thinned occurrences to estimate climatic niche
+When tag-based temperature data are unavailable, niche_occ() implements an alternative, trait based approach. It utilizes bias-reduced occurrences to extract real-time temperatures from the depth layer preferred by species (e.g., surface for pelagic fish) rather than depths recorded in biodiversity databases as in the voluModel package. It then allows users to select similar methods (KDE-based probability) to estimate TCR and PCR as mentioned for niche_tag().
+
+
+  Here below are the parameters used in the niche_occ().
+
+@param occ_path character. Path to occurrence file (table with columns: long, lat, year, month).
+
+@param env_path character. Path to NetCDF file containing environmental data (e.g., temperature, DO).
+
+@param pref_prob numeric. Proportion of area on each side of the mode to include in the
+preference range. Default is 0.5 (50% of each side's area).
+
+@param toler_prob numeric. Proportion of area on each side of the mode to include in the
+tolerance range. Default is 0.95 (95% of each side's area).
+
+@param bw_method Character. Bandwidth selection method for kernel density estimation.
+Options are:
+  {"SJ"} (default): Sheather–Jones direct plug-in estimator. Adaptive to
+        data structure, preferred for complex/multimodal distributions, but
+        computationally more intensive.
+  {"nrd0"}: Silverman's rule-of-thumb (default in {stats::density}).
+        Fast and stable, suitable for unimodal, near-normal distributions, but may
+        oversmooth multimodal or skewed distributions.
+  {"nrd"}: Silverman's rule-of-thumb (variant). Slightly different
+        scaling factor, similar properties to {"nrd0"}.
+  {"bcv"}: Biased cross-validation. Tends to produce smaller bandwidths,
+        useful for fine-scale features, but can be unstable.
+  {"ucv"}: Unbiased cross-validation. Tends to produce larger bandwidths,
+        more stable than {"bcv"} but computationally intensive.
+        
+@param save_path character. Directory to save output plot and summary CSV. If NULL, nothing saved.
+
+@param min_year numeric. First year of occurrence data (used to compute time index in NetCDF).
+
+@param var_name character. Variable name in the NetCDF file (e.g., "thetao_mean", "o2").
+
+@param env_label character. Display name for the environmental variable (e.g., "Temperature", "Dissolved Oxygen"). Defaults to var_name.
+
+@param unit character. Unit of the environmental variable (e.g., "°C", "mg/L"). Defaults to empty string.
+
+@param lon_range numeric vector of length 2: min and max longitude of the raster extent.
+
+@param lat_range numeric vector of length 2: min and max latitude of the raster extent.
+
+@param width numeric. Plot width in inches (default: 6).
+
+@param height numeric. Plot height in inches (default: 5).
+
+@param seed integer. Random seed for reproducibility (default: 123).
+
 Here, based on the pelagic trait of the focal species, I used niche_occ() to extract the temperature at the depth of 1 m at the thinned occurrences to estimate thermal niche.
 ```{r niche_occ,cache=TRUE}
 occ_path<-system.file("extdata", "R_typus_qs.txt", package = "OceanSDM")
-
-var_name<-"thetao_mean"
 # ocean temperature at the surface layer (depth = 1m)
 temp_path<-system.file("extdata", "cms/IndoWPac_temp_1m_y2015_y2024.nc", package = "OceanSDM")
 save_path <- "F:/whaleshark_sdm/temp_fit/habitat"
-min_year<-2015
-lon_range<-c(90,180)
-lat_range<-c(-41,40)
-width<-6
-height<-5
 temp_occ<-niche_occ(
-    occ_path,
-    temp_path,
-    toler_quantiles = c(0.01, 0.99),
-    pref_method = "FWHM",
-    pref_quantiles =NULL,
-    save_path,
-    min_year,
-    var_name = "thetao_mean",
-    env_label = "Temperature",
-    unit = "℃",
-    lon_range,
-    lat_range,
-    width = 6,
-    height = 5
-)
+  occ_path,
+  temp_path,
+  pref_prob = 0.5,
+  toler_prob = 0.99,
+  bw_method = "nrd0",
+  save_path,
+  min_year = 2015,
+  var_name = "thetao_mean",
+  env_label = "Temperature",
+  unit = "℃",
+  lon_range=c(90,180),
+  lat_range=c(-41,40),
+  width = 6,
+  height = 5
+  )
 ```
 
 ### 3.1.3 Extract oxygen data (optional)
@@ -747,23 +1145,45 @@ Although the depth limits might be best estimated with thermal niche, other phys
 # oxy_occ<-niche_occ(
 #   occ_path,
 #   o2_path,
-#   toler_quantiles = c(0.01, 0.99),
-#   pref_method = "FWHM",
-#   pref_quantiles =NULL,
+#   pref_prob = 0.5,
+#  toler_prob = 0.99,
+#  bw_method = "nrd0",
 #   save_path,
-#   min_year,
+#   min_year=2015,
 #   var_name = "o2",
 #   env_label = "Dissolved oxygen",
 #   unit = "μmol/L",
-#   lon_range,
-#   lat_range,
+#   lon_range=c(90,180),
+#  lat_range=c(-41,40),
 #   width = 8,
 #   height = 5
 # )
 ```
 
-## 3.2 Create temporally-binned temperature for each depth layer ##
+## 3.2 Create temporally-binned temperature for each depth layer using clim_bin() ##
 Before predicting vertical distributions across space and time, clim_bin() calculates the average climate value at each depth layer of each predicted suitable pixel in each temporal bin (derived from TB_sdm).
+
+  Here below are the parameters used in the niche_occ().
+
+@param clim_nc Character. Path to the multi-depth layers over years
+  and months of climate NetCDF file.
+
+@param presence_asc List or SpatRaster. A named list where each element is a
+  presence raster (values 1 = presence, NA/0 = absence) corresponding to a
+  temporal group (folder name). For season, names must be one of
+  "Winter", "Spring", "Summer", "Autumn".
+
+@param time_type Character. Type of temporal aggregation. One of `"month"`,
+  `"quarter"`, or `"season"`.
+
+@param var_name Character. Variable name in NetCDF. If not found exactly,
+  the function will attempt to match (case‑insensitive) and warn.
+  e.g., `"thetao_mean"`.
+
+@param save_path Character. Directory path where output files will be saved.
+
+@param na_value Numeric. Value to replace `NA`. Default `-9999`.
+
 ```{r clim_bin,cache=FALSE}
 ## Collect predicted binary maps of each temporal bin (here, quarters)
 # quarter_files<-c(
@@ -788,13 +1208,38 @@ Before predicting vertical distributions across space and time, clim_bin() calcu
 
 ## 3.3 Calculate TD and PD for each temporal bin with TB_depth() ######
 TB_depth() calculates tolerable depths (TD) and preferred depths (PD) in each pixel for each temporal bin by comparing TCR and PCR, respectively, with the climate value along the vertical gradient. It outputs three statistics (minimum, maximum, range) for TD and PD and plots the vertical climate profile for a random sample (default, 100) of grids. However, this process is very time-consuming (lasting > 8 hrs) given the function has to calculate these statistics grid by grid and there are 47 depth layers. Therefore, I did not run the following code when generating this vignette. But I have stored the outputs while producing the paper.
+
+  Here below are the parameters used in the TB_depth().
+
+@param temp_bin_path Character. Root path of temp_bin generated files.
+
+@param PTR Numeric vector of length 2. Temperature range, e.g., `c(23.5, 30.2)`.
+
+@param time_type Character. Time type, should match that used in temp_bin:
+  `"month"`, `"quarter"`, or `"season"`.
+
+@param layer_option Character. Which depth interval to extract: `"top"` (shallowest)
+  or `"bottom"` (deepest). Default is `"top"`.
+
+@param save_path Character. Path to save output files.
+
+@param na_value Numeric. Value to replace NA (default: -9999).
+
+@param use_makima Logical. Whether to use makima interpolation. If `FALSE` , falls back to spline.
+
+@param N_cells Integer. Number of random cells to plot (5--30). If `0`, no plot is generated.
+
+@param ncores Integer. Number of cores for parallel processing (uses `pbapply`). Default: 1.
+
 ```{r TB_depth(),cache=TRUE}
 ##### Example shown with estimates based on tag data
 df<-read.csv(system.file("extdata","summary_niche_fit.csv",package = "OceanSDM"))
 PTR<-df[2:3,2] # preferred temperature range
 TTR<-df[4:5,2] # tolerable temperature range
+PTR
+TTR
 ## Run the whole code in subsection 3.2 to create temporally-binned mean temperature for each depth layer. Here I stored all these files in "F:/whaleshark_sdm/4D"
-temp_bin_path<-"F:/whaleshark_sdm/4D" # Change to your own directory
+temp_bin_path<-system.file("extdata","4D",package = "OceanSDM") # Change to your own directory
 save_path_TPD<-"F:/whaleshark_sdm/4D/TPD" ## for storing data of Preferred Depth (PD)
 save_path_TTD<-"F:/whaleshark_sdm/4D/TTD" ## for storing data of Tolerable Depth (TD)
 ## For Tolerable Depth
@@ -813,6 +1258,22 @@ TTD_quarter<-TB_depth(temp_bin_path, TTR, time_type = "quarter",
 
 ## 3.4 Plot habitat volume and area with plot_stat_4D() ##############
 plot_stat_4D() maps the statistics (Max, Min, Range) of TD and PD across predicted 2D presence maps, generates boxplots, and tests for significant differences among temporal bins using Kruskal Wallis followed by Dunn’s post-hoc tests. It also create a figure to showcase the total suitable habitat volume based on the TD or PD, and estimates total suitable habitat area based on the 2D presence map of each temporal bin. 
+
+  Here below are the parameters used in the plot_stat_4D().
+
+@param file_list Character vector. File paths to raster files.
+
+@param save_path Character. Directory path to save plots and report.
+
+@param time_type Character. One of {"quarter"}, {"month"}, or {"season"}.
+
+@param presence_files Character vector (optional). Paths to binary presence rasters.
+
+@param plot_overlay Logical. Whether to create volume-area overlay plot.
+
+@param sample_fraction Numeric. Fraction of complete cells to sample for statistical tests. Default: 0.2 (20\%).
+
+
 ```{r plot_stat_4D,cache=FALSE}
 ## Run the whole code in subsection 3.3 to estimate three parameters (minimum, maximum, range) of thermally preferred depth or thermally tolerable depth. Here I load the input data I already prepared.
 
@@ -873,10 +1334,10 @@ result_TTD$depth_min
 result_TTD$depth_max
 result_TTD$overlay_plot
 volum<-rbind(result_TPD$volum,result_TTD$volum)
-volum$Group<-c(rep("TPD",4),rep("TTD",4))
+volum$Group<-c(rep("PD",4),rep("TD",4))
 area<-result_TPD$area
-# write.csv(volum,"F:/whaleshark_sdm/4D/volume_data.csv",row.names = F)
-# write.csv(area,"F:/whaleshark_sdm/4D/area_data.csv",row.names = F)
+write.csv(volum,"F:/whaleshark_sdm/4D/volume_data.csv",row.names = F)
+write.csv(area,"F:/whaleshark_sdm/4D/area_data.csv",row.names = F)
 ```
 
 ## 3.5 Plot habitat volumes (estimated based on TD and PD) and habitat area in one graph (Optional)
@@ -885,8 +1346,9 @@ You can use the following codes to plot the two habitat volume estimates (based 
 habitat area on one graph.
 ```{r plot_volume_area,cache=FALSE}
 library(ggplot2)
-volum<-read.csv("F:/whaleshark_sdm/4D/volume_data.csv")
-area<-read.csv("F:/whaleshark_sdm/4D/area_data.csv")
+volum<-read.csv(system.file("extdata","4D/volume_data.csv",package="OceanSDM"))
+area<-read.csv(system.file("extdata","4D/area_data.csv",package="OceanSDM"))
+
 # convert raw values to [0,1]
 choose_factor <- function(x) {
 if (all(x == 0)) return(1)
@@ -914,7 +1376,7 @@ area$Temporal_bin <- factor(area$Temporal_bin, levels = c("Q1", "Q2", "Q3", "Q4"
 # Merge area data into the main dataset (for plotting)
 library(dplyr)
 area_matched <- area %>%
-right_join(volum %>% select(Temporal_bin) %>% distinct(), by = "Temporal_bin")
+  right_join(volum %>% dplyr::select(Temporal_bin) %>% distinct(), by = "Temporal_bin")
 # Calculate the range of Volume (for automatic scaling of Area)
 vol_range <- range(volum$Volume, na.rm = TRUE)
 area_range <- range(area_matched$Area, na.rm = TRUE)
@@ -939,7 +1401,7 @@ p <- ggplot(volum, aes(x = Temporal_bin, y = Volume, fill = Group)) +
   geom_line(
   data = area_matched,
   aes(x = Temporal_bin, y = Area_scaled, group = 1),
-  color = "red", size = 1,
+  color = "red", linewidth = 1,
   inherit.aes = FALSE
   ) +
   geom_point(

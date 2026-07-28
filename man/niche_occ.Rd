@@ -7,9 +7,9 @@
 niche_occ(
   occ_path,
   env_path,
-  toler_quantiles = c(0.01, 0.99),
-  pref_method = c("FWHM", "quantile"),
-  pref_quantiles = c(0.25, 0.75),
+  pref_prob = 0.5,
+  toler_prob = 0.95,
+  bw_method = c("SJ", "nrd0", "nrd", "bcv", "ucv"),
   save_path = NULL,
   min_year,
   var_name = "thetao_mean",
@@ -18,7 +18,8 @@ niche_occ(
   lon_range,
   lat_range,
   width = 6,
-  height = 5
+  height = 5,
+  seed = 123
 )
 }
 \arguments{
@@ -26,11 +27,28 @@ niche_occ(
 
 \item{env_path}{character. Path to NetCDF file containing environmental data (e.g., temperature, DO).}
 
-\item{toler_quantiles}{vector. Quantiles for tolerance range (default: c(0.01, 0.99)).}
+\item{pref_prob}{numeric. Proportion of area on each side of the mode to include in the
+preference range. Default is 0.5 (50\% of each side's area).}
 
-\item{pref_method}{character. Method for preference range: "FWHM" (Full Width at Half Maximum) or "quantile".}
+\item{toler_prob}{numeric. Proportion of area on each side of the mode to include in the
+tolerance range. Default is 0.95 (95\% of each side's area).}
 
-\item{pref_quantiles}{vector. Quantiles for preference range when pref_method = "quantile" (default: c(0.25, 0.75)).}
+\item{bw_method}{Character. Bandwidth selection method for kernel density estimation.
+Options are:
+\itemize{
+\item \code{"SJ"} (default): Sheather–Jones direct plug-in estimator. Adaptive to
+data structure, preferred for complex/multimodal distributions, but
+computationally more intensive.
+\item \code{"nrd0"}: Silverman's rule-of-thumb (default in \code{stats::density}).
+Fast and stable, suitable for unimodal, near-normal distributions, but may
+oversmooth multimodal or skewed distributions.
+\item \code{"nrd"}: Silverman's rule-of-thumb (variant). Slightly different
+scaling factor, similar properties to \code{"nrd0"}.
+\item \code{"bcv"}: Biased cross-validation. Tends to produce smaller bandwidths,
+useful for fine-scale features, but can be unstable.
+\item \code{"ucv"}: Unbiased cross-validation. Tends to produce larger bandwidths,
+more stable than \code{"bcv"} but computationally intensive.
+}}
 
 \item{save_path}{character. Directory to save output plot and summary CSV. If NULL, nothing saved.}
 
@@ -49,32 +67,38 @@ niche_occ(
 \item{width}{numeric. Plot width in inches (default: 6).}
 
 \item{height}{numeric. Plot height in inches (default: 5).}
+
+\item{seed}{integer. Random seed for reproducibility (default: 123).}
 }
 \value{
 A list containing:
 \item{occ_values}{Extracted environmental values at occurrence points (NAs removed)}
 \item{summary}{Data frame with optimal value, preference range, tolerance range}
 \item{density_df}{Kernel density estimation results}
-\item{pref_method}{Method used for preference range}
-\item{pref_quantiles}{Preference quantiles (if applicable)}
+\item{pref_prob_used}{Proportion used for preference range on each side}
+\item{toler_prob_used}{Proportion used for tolerance range on each side}
+\item{bw_method}{Bandwidth selection method used}
+\item{bw_value}{Bandwidth value used}
 \item{env_label}{Display name of the variable}
 \item{unit}{Unit of the variable}
 }
 \description{
 Extracts environmental values (e.g., temperature, dissolved oxygen)
 from raster layers at occurrence points, then estimates optimal value,
-preference range, and tolerance range.
+preference range, and tolerance range using the same asymmetric mode-based
+approach as \code{niche_tag()}.
 }
 \examples{
 \donttest{
-occ_path<-system.file("extdata","R_typus_q1.txt",package = "OceanSDM")
-env_path<-system.file("extdata","cmems/IndoWPac_temp_1m_y2015_y2024.nc",package = "OceanSDM")
+occ_path <- system.file("extdata", "R_typus_q1.txt", package = "OceanSDM")
+env_path <- system.file("extdata", "cmems/IndoWPac_temp_1m_y2015_y2024.nc", package = "OceanSDM")
+
 niche_occ(
   occ_path = occ_path,
   env_path = env_path,
-  toler_quantiles = c(0.01, 0.99),
-  pref_method = "FWHM",
-  pref_quantiles = NULL,
+  pref_prob = 0.5,
+  toler_prob = 0.95,
+  bw_method = "SJ",
   save_path = "F:/whaleshark_sdm/temp_fit/habitat",
   min_year = 2015,
   var_name = "thetao_mean",
