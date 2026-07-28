@@ -310,7 +310,7 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
       p <- ggplot2::ggplot(df_stat, ggplot2::aes(x = time, y = value, fill = time)) +
         ggplot2::geom_boxplot() +
         ggplot2::scale_fill_brewer(palette = "Blues") +
-        ggplot2::labs(x = time_type, y = st) +
+        ggplot2::labs(x = NULL, y = st) +
         ggplot2::theme_classic() +
         ggplot2::theme(
           legend.position = "none",
@@ -340,7 +340,7 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
     p <- ggplot2::ggplot(df_stat, ggplot2::aes(x = time, y = value, fill = time)) +
       ggplot2::geom_boxplot() +
       ggplot2::scale_fill_brewer(palette = "Blues") +
-      ggplot2::labs(x = time_type, y = st) +
+      ggplot2::labs(x = NULL, y = st) +
       ggplot2::theme_classic() +
       ggplot2::theme(
         legend.position = "none",
@@ -531,7 +531,7 @@ plot_stat_4D <- function(file_list, save_path, time_type = "quarter",
           sec.axis = ggplot2::sec_axis(~ . / scale_ratio, name = area_label,
                                        labels = function(x) format(x, digits = 2))
         ) +
-        ggplot2::labs(x = "Quarters") +
+        ggplot2::labs(x = NULL) +
         ggplot2::theme_minimal() +
         ggplot2::theme(
           axis.line = ggplot2::element_line(),
