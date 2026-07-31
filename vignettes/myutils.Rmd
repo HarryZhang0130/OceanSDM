@@ -946,10 +946,10 @@ res_plot <- TB_rescur(root_path,
                                  "4th Quarter" = "#5D9BEC"),
                       time_names = time_names,
                       time_folders = NULL,
-                      legend_position = "bottom",
+                      legend_position = "vertical",
                       ncol=3, nrow =NULL,
-                      width = 8,
-                      height = 5,
+                      width = 10,
+                      height = 4,
                       save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
 print(res_plot)
 
@@ -1225,15 +1225,17 @@ presence_asc <- lapply(quarter_files, terra::rast)
 save_path<-"F:/whaleshark_sdm/4D"
 
 ## In subsection 1.2.2, you can run the code to downloaded temperature data for three water columns: 0-200m, 200-400m, 400-1050m. And then you can employ clim_bin() to create temporally-binned predictors for each depth layer based on these three .nc files.
+# For the first water column (0-200m)
 temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200m_y2015_y2024.nc"
 clim_bin(temp_nc, presence_asc, time_type = "quarter",
          save_path=save_path, na_value = -9999)
-temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
-clim_bin(temp_nc, presence_asc, time_type = "quarter",
-         save_path=save_path,  na_value = -9999)
-temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
-clim_bin(temp_nc, presence_asc, time_type = "quarter",
-         save_path=save_path, na_value = -9999)
+## You can run the following code for the other two water columns by removing the hashtags.
+# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
+# clim_bin(temp_nc, presence_asc, time_type = "quarter",
+#          save_path=save_path,  na_value = -9999)
+# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
+# clim_bin(temp_nc, presence_asc, time_type = "quarter",
+#          save_path=save_path, na_value = -9999)
 ```
 
 ## 3.3 Calculate TD and PD for each temporal bin with TB_depth() ######
@@ -1278,7 +1280,7 @@ TTD_quarter<-TB_depth(temp_bin_path, TTR, time_type = "quarter",
                       save_path_TTD, na_value = -9999,
                       use_makima = TRUE,
                       N_cells = 50)
-## For Preferred Depth (PD), run the following code:
+## For Preferred Depth (PD), run the following code by removing the hashtags:
 # TPD_quarter<-TB_depth(temp_bin_path, PTR, time_type = "quarter",
 #                       layer_option="top",
 #                       save_path_TPD, na_value = -9999,

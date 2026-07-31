@@ -2,7 +2,7 @@
   <PAMRasterBand band="1">
     <Description>Presence_SUP_MAXTSS</Description>
     <Metadata>
-      <MDI key="STATISTICS_MAXIMUM">29.70686340332</MDI>
+      <MDI key="STATISTICS_MAXIMUM">29.517513275146</MDI>
       <MDI key="STATISTICS_MEAN">-9999</MDI>
       <MDI key="STATISTICS_MINIMUM">16.702247619629</MDI>
       <MDI key="STATISTICS_STDDEV">-9999</MDI>

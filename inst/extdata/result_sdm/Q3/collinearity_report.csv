@@ -1,4 +1,4 @@
 "Var1","Var2","Correlation"
-"Dissolved_oxygen","Temperature",-0.950106047728474
-"Salinity","Temperature",-0.878619192849458
-"Dissolved_oxygen","Salinity",0.841397120275337
+"Net_primary_productivity","Salinity",-0.860365337235013
+"Mixed_layer_depth","Temperature",-0.806833235978547
+"Sea_surface_height","Temperature",0.802105021655588

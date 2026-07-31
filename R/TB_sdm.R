@@ -215,7 +215,7 @@ TB_sdm <- function(env_path,
 
   ############# 4. Collinearity diagnostics #############
   message("Performing collinearity diagnostics...")
-  env_vals <- terra::extract(env_stack, occ[, c("x", "y")], ID = FALSE)
+  env_vals <- terra::extract(env_stack, all_data[, c("x", "y")], ID = FALSE)
   env_vals <- env_vals[complete.cases(env_vals), ]
   if (nrow(env_vals) < 2) {
     collinearity_report <- data.frame(Var1 = character(), Var2 = character(), Correlation = numeric())
