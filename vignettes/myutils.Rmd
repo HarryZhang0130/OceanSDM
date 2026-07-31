@@ -722,7 +722,7 @@ sdm_q1<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
                 ensemble.method = "weighted", ensemble.stat = "TSS",
                 ncore = 1, seed = 123,
                 proj_path = d_prj,
-                collinearity_thresh = 0.75, remove_collinear = F)
+                collinearity_thresh = 0.75, remove_collinear = T)
 ## Q2
 d_occ <- system.file("extdata", "R_typus_q2.txt", package = "OceanSDM")
 d_env <- system.file("extdata", "Q2", package = "OceanSDM")
@@ -735,7 +735,7 @@ sdm_q2<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
                 var.importance = TRUE, response.curve = TRUE,
                 ensemble.method = "weighted", ensemble.stat = "TSS",
                 ncore = 1, seed = 123,
-                collinearity_thresh = 0.75, remove_collinear = F)
+                collinearity_thresh = 0.75, remove_collinear = T)
 # # Q3
 d_occ <- system.file("extdata", "R_typus_q3.txt", package = "OceanSDM")
 d_env <- system.file("extdata", "Q3", package = "OceanSDM")
@@ -748,7 +748,7 @@ sdm_q3<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
                 var.importance = TRUE, response.curve = TRUE,
                 ensemble.method = "weighted", ensemble.stat = "TSS",
                 ncore = 1, seed = 123,
-                collinearity_thresh = 0.75, remove_collinear = F)
+                collinearity_thresh = 0.75, remove_collinear = T)
 # # Q4
 d_occ <- system.file("extdata", "R_typus_q4.txt", package = "OceanSDM")
 d_env <- system.file("extdata", "Q4", package = "OceanSDM")
@@ -761,7 +761,7 @@ sdm_q4<- TB_sdm(env_path=d_env, occ_path=d_occ, res_path=d_res,
                 var.importance = TRUE, response.curve = TRUE,
                 ensemble.method = "weighted", ensemble.stat = "TSS",
                 ncore = 1, seed = 123,
-                collinearity_thresh = 0.75, remove_collinear = F)
+                collinearity_thresh = 0.75, remove_collinear = T)
 ## save data
 # save(sdm_q1,sdm_q2,sdm_q3,sdm_q4, file = "F:/whaleshark_sdm/example.RData")
 
@@ -877,8 +877,9 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 ## Clean the R environment
 rm()
 gc()
+root_path<-system.file("extdata","result_sdm",package = "OceanSDM")
 ## Plot predictive maps
-map_plot<-TB_map(root_path = "F:/whaleshark_sdm/result_sdm",
+map_plot<-TB_map(root_path,
   time_type = "quarter",
   output_width = 8,
   output_height = 12,
@@ -889,7 +890,7 @@ print(map_plot)
 time_names <- c("1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter")
 
 #  Plot variable importance
-imp_plot <- TB_varimp(root_path = "F:/whaleshark_sdm/result_sdm",
+imp_plot <- TB_varimp(root_path,
                       time_type = "quarter",
                       file_name = "VarImportance_Table.csv",
                       time_names = time_names,
@@ -907,7 +908,7 @@ imp_plot <- TB_varimp(root_path = "F:/whaleshark_sdm/result_sdm",
                       save_path = "F:/whaleshark_sdm/result_sdm/variable_importance.tif")
 print(imp_plot)
 #  Plot response curves panel (legend at the bottom)
-res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
+res_plot <- TB_rescur(root_path,
                       time_type = "quarter",
                       file_name = "rcurve_Table.csv",
                       colors = c("1st Quarter" = "#FFB347",
@@ -920,7 +921,7 @@ res_plot <- TB_rescur(root_path = "F:/whaleshark_sdm/result_sdm",
                       ncol=4, nrow =NULL,
                       width = 10,
                       height = 4,
-                      save_path = "F:/whaleshark_sdm/result_sdm/response_curves2.tif")
+                      save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
 print(res_plot)
 
 ```
@@ -1186,24 +1187,24 @@ Before predicting vertical distributions across space and time, clim_bin() calcu
 
 ```{r clim_bin,cache=FALSE}
 ## Collect predicted binary maps of each temporal bin (here, quarters)
-# quarter_files<-c(
-#   Q1="F:/whaleshark_sdm/result_sdm/Q1/predicted_presence.asc",
-#   Q2="F:/whaleshark_sdm/result_sdm/Q2/predicted_presence.asc",
-#   Q3="F:/whaleshark_sdm/result_sdm/Q3/predicted_presence.asc",
-#   Q4="F:/whaleshark_sdm/result_sdm/Q4/predicted_presence.asc")
-# presence_asc <- lapply(quarter_files, terra::rast)
-# save_path<-"F:/whaleshark_sdm/4D"
+quarter_files<-c(
+  Q1=system.file("extdata/result_sdm/Q1/predicted_presence.asc",package = "OceanSDM"),
+  Q2=system.file("extdata/result_sdm/Q2/predicted_presence.asc",package = "OceanSDM"),
+  Q3=system.file("extdata/result_sdm/Q3/predicted_presence.asc",package = "OceanSDM"),
+  Q4=system.file("extdata/result_sdm/Q4/predicted_presence.asc",package = "OceanSDM"))
+presence_asc <- lapply(quarter_files, terra::rast)
+save_path<-"F:/whaleshark_sdm/4D"
 
-## In subsection 1.2.2, you can run the code to downloaded temperature data for three water columns: 0-200m, 200-400m, 400-1050m. And then you can employ clim_bin() to create temporally-binned predictors for each depth layer based on these three .nc files. 
-# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200m_y2015_y2024.nc"
-# clim_bin(temp_nc, presence_asc, time_type = "quarter",
-#          save_path=save_path, hemisphere = "north", na_value = -9999)
-# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
-# clim_bin(temp_nc, presence_asc, time_type = "quarter",
-#          save_path=save_path,  na_value = -9999)
-# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
-# clim_bin(temp_nc, presence_asc, time_type = "quarter",
-#          save_path=save_path, na_value = -9999)
+## In subsection 1.2.2, you can run the code to downloaded temperature data for three water columns: 0-200m, 200-400m, 400-1050m. And then you can employ clim_bin() to create temporally-binned predictors for each depth layer based on these three .nc files.
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path, na_value = -9999)
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path,  na_value = -9999)
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path, na_value = -9999)
 ```
 
 ## 3.3 Calculate TD and PD for each temporal bin with TB_depth() ######

@@ -2,9 +2,9 @@
   <PAMRasterBand band="1">
     <Description>Habitat_suitability_SUP_proj</Description>
     <Metadata>
-      <MDI key="STATISTICS_MAXIMUM">0.75524282455444</MDI>
+      <MDI key="STATISTICS_MAXIMUM">0.78858703374863</MDI>
       <MDI key="STATISTICS_MEAN">-9999</MDI>
-      <MDI key="STATISTICS_MINIMUM">0.030741488561034</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.031278990209103</MDI>
       <MDI key="STATISTICS_STDDEV">-9999</MDI>
     </Metadata>
   </PAMRasterBand>

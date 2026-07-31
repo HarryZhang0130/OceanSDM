@@ -2,9 +2,9 @@
   <PAMRasterBand band="1">
     <Description>ensemble_suitability</Description>
     <Metadata>
-      <MDI key="STATISTICS_MAXIMUM">0.88530087471008</MDI>
+      <MDI key="STATISTICS_MAXIMUM">0.86939668655396</MDI>
       <MDI key="STATISTICS_MEAN">-9999</MDI>
-      <MDI key="STATISTICS_MINIMUM">0.028327908366919</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.029155287891626</MDI>
       <MDI key="STATISTICS_STDDEV">-9999</MDI>
     </Metadata>
   </PAMRasterBand>

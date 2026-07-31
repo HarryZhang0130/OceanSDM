@@ -1,8 +1,7 @@
 "variables","corTest","AUCtest"
-"Depth",0.1091,0.0588
-"Dissolved_oxygen",0.1041,0.0448
-"Mixed_layer_depth",0.1419,0.0828
-"Net_primary_productivity",0.0302,0.0144
-"Salinity",0.0489,0.0276
-"Sea_surface_height",0.2967,0.1756
-"Temperature",0.0431,0.0172
+"Depth",0.1483,0.0892
+"Mixed_layer_depth",0.1528,0.1176
+"Net_primary_productivity",0.0425,0.022
+"Salinity",0.0524,0.0292
+"Sea_surface_height",0.2749,0.1552
+"Temperature",0.1706,0.106
