@@ -446,11 +446,11 @@ niche_occ <- function(
                         label = paste("Optimal:", round(optimal, 1), x$unit),
                         hjust = -0.1, color = "red", size = 4) +
       # Legend annotations
-      ggplot2::annotate("text", x = optimal,
+      ggplot2::annotate("text", x = lower_pref,
                         y = max(x$density_df$y) * 0.15,
                         label = toler_label,
                         color = "darkgreen", size = 3.5, hjust = 0) +
-      ggplot2::annotate("text", x = optimal,
+      ggplot2::annotate("text", x = lower_pref,
                         y = max(x$density_df$y) * 0.10,
                         label = pref_label,
                         color = "orange", size = 3.5, hjust = 0) +

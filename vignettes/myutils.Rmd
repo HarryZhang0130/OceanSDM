@@ -5,6 +5,12 @@ output:
   html_document:
     toc: true
     toc_depth: 3
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    theme: cosmo
+    highlight: tango
     css: vignette.css
 vignette: >
   %\VignetteIndexEntry{Introduction to OceanSDM}
@@ -59,7 +65,30 @@ write.csv(ws_occ$sp_occ,"F:/whaleshark_sdm/occ/R_typus.csv",row.names = F)
 ```
 
 ## 1.2 Download .nc files of marine environmental predictors using env_download() 
-The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). But please note you must first install the copernicusmarine toolbox (and configure its running environment with conda or other softwares, see details at https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-installation) on which this function was built. Here I only showed a case of extracting sea surface temperature at smaller temporal and geographic ranges than the real case I used in the paper.
+The Copernicus Marine Service (CMS) offers dynamic, three-dimensional environmental data that can be extracted with the function env_download(). !!! But please note you must first get access to the copernicusmarine toolbox on which this function was built.
+Here is a step-by-step instruction for this:
+
+Step 1. Download the executable file
+
+If you are the first time to use copernicusmarine toolbox. You should first download an executable file of the copernicusmarine toolbox. See the download links in the “Step 2” of an official instruction at https://help.marine.copernicus.eu/en/articles/10750437-copernicus-marine-toolbox-executable-no-installation. For different OS (Windows, Mac, Linux), there are different executable files. You should choose the right one.
+
+Step 2. Move it to a safe directory and register
+
+After download it, make sure you move it to a directory (e.g., in my Windows, I stored it at “C:”) that you won’t clean when you utilize storage cleaning up software. If you haven’t registered to the Copernicus Marine Service yet, you can register at https://data.marine.copernicus.eu/register.
+
+Step 3. Login to the Copernicus Marine Service
+
+For Windows users, go to your command prompt and navigate to the executable file. For instance, if you are using Windows and the executable file is stored at “C:/shark”, then in the command prompt, run this line to move to your directory: 
+cd “C:/shark”. Then run the login code: copernicusmarine login
+
+This will allow you to use your registered username and password to create a credential file (.copernicusmarine-credentials) and store it in your PC. 
+
+For those who use MacOS or Linux, you need an extra step ahead to grant execute permission. Suppose you downloaded the executable file (copernicusmarine_macos-x86_64.cli) and stored the executable file in a safe path (e.g., ./shark). Open the terminal in this path, then run: chmod +x copernicusmarine_macos-x86_64
+
+After this you can log in by runnig this line:./copernicusmarine_macos-x86_64 login
+
+Now, you are ready to download the required product in R by using the env_download() function. 
+
 
   Here below are the parameters used in the env_download().
   
@@ -917,10 +946,10 @@ res_plot <- TB_rescur(root_path,
                                  "4th Quarter" = "#5D9BEC"),
                       time_names = time_names,
                       time_folders = NULL,
-                      legend_position = "vertical",
-                      ncol=4, nrow =NULL,
-                      width = 10,
-                      height = 4,
+                      legend_position = "bottom",
+                      ncol=3, nrow =NULL,
+                      width = 8,
+                      height = 5,
                       save_path = "F:/whaleshark_sdm/result_sdm/response_curves.tif")
 print(res_plot)
 
@@ -1116,7 +1145,7 @@ occ_path<-system.file("extdata", "R_typus_qs.txt", package = "OceanSDM")
 # ocean temperature at the surface layer (depth = 1m)
 temp_path<-system.file("extdata", "cms/IndoWPac_temp_1m_y2015_y2024.nc", package = "OceanSDM")
 save_path <- "F:/whaleshark_sdm/temp_fit/habitat"
-temp_occ<-niche_occ(
+thermal_occ<-niche_occ(
   occ_path,
   temp_path,
   pref_prob = 0.5,
