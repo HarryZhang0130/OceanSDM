@@ -9,7 +9,7 @@ output:
       collapsed: false
       smooth_scroll: true
     number_sections: false
-    theme: cosmo
+    theme: journal
     highlight: tango
     css: vignette.css
 vignette: >
@@ -727,7 +727,7 @@ To predict horizontal geographic distributions within each temporal bin, we crea
 
 @param proj_path character. Optional projection rasters directory.
 
-```{r build 2D-SDM, cache=TRUE}
+```{r build 2D-SDM, cache=FALSE}
 #### Prior to this step, please rename the environmental predictors to make the
 #### the names of variables of each quarterly bin the same as follows:
 #### Depth, Mixed_layer_depth, Dissolved_oxygen, Temperature, Salinity, 
@@ -902,7 +902,7 @@ After successful 2D-SDM construction, TB_map(), TB_varimp(), and TB_rescur() aut
 @param save_path Character. Path to save the plot (TIFF format). If `NULL`,
   the plot is not saved.
 
-```{r plot 2D-SDM, cache=TRUE}
+```{r plot 2D-SDM, cache=FALSE}
 ## Clean the R environment
 rm()
 gc()
@@ -1230,12 +1230,15 @@ temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200m_y2015_y2024.nc"
 clim_bin(temp_nc, presence_asc, time_type = "quarter",
          save_path=save_path, na_value = -9999)
 ## You can run the following code for the other two water columns by removing the hashtags.
-# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
-# clim_bin(temp_nc, presence_asc, time_type = "quarter",
-#          save_path=save_path,  na_value = -9999)
-# temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
-# clim_bin(temp_nc, presence_asc, time_type = "quarter",
-#          save_path=save_path, na_value = -9999)
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_200_400m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path,  na_value = -9999)
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_400_1050m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path, na_value = -9999)
+temp_nc<-"F:/whaleshark_sdm/cmems/IndoWPac_temp_1050_1946m_y2015_y2024.nc"
+clim_bin(temp_nc, presence_asc, time_type = "quarter",
+         save_path=save_path, na_value = -9999)
 ```
 
 ## 3.3 Calculate TD and PD for each temporal bin with TB_depth() ######
