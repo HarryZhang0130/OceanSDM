@@ -697,6 +697,11 @@ To predict horizontal geographic distributions within each temporal bin, we crea
 
 @param pre_abs_ratio numeric. Ratio of presences to pseudo-absences points.
 
+@param abs_method character. Method for background generation. 
+       Options are: "gRandom", "eRandom", "gDist", "eDist" (see sdm::background,  Naimi & Araújo, 2016),
+       "eStrat" (stratified random in environmental space, Steen et al., 2024),
+       or "eUnif" (uniform sampling in environmental space via USE::paSampling, Da Re et al., 2023)
+
 @param collinearity_thresh numeric. Correlation threshold.
 
 @param remove_collinear logical. Remove correlated variables.

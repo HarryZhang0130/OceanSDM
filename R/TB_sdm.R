@@ -7,6 +7,10 @@
 #' @param x character. Column name for longitude.
 #' @param y character. Column name for latitude.
 #' @param pre_abs_ratio numeric. Ratio of presences to pseudo-absences points.
+#' @param abs_method character. Method for background generation. Options are:
+#'   \code{"gRandom"}, \code{"eRandom"}, \code{"gDist"}, \code{"eDist"} (see \code{sdm::background},  Naimi & Araújo, 2016),
+#'   \code{"eStrat"} (stratified random in environmental space, Steen et al., 2024),
+#'   or \code{"eUinf"} (uniform sampling in environmental space via \code{USE::paSampling}, Da Re et al., 2023).
 #' @param collinearity_thresh numeric. Correlation threshold.
 #' @param remove_collinear logical. Remove correlated variables.
 #' @param max_dist numeric. Maximum distance (unit: meters) to be used in calculating Moran's I. Default is NULL
@@ -48,6 +52,7 @@
 #'   x = "x",
 #'   y = "y",
 #'   pre_abs_ratio = 1,
+#'   abs_method = "eUinf", # uniform sampling in environmental space
 #'   collinearity_thresh = 0.7,
 #'   remove_collinear = TRUE,
 #'   block_size = 500000,
@@ -70,6 +75,7 @@ TB_sdm <- function(env_path,
                    x,
                    y,
                    pre_abs_ratio = 1,
+                   abs_method = 'eDist',
                    collinearity_thresh = 0.7,
                    remove_collinear = FALSE,
                    block_size = NULL,
@@ -196,15 +202,127 @@ TB_sdm <- function(env_path,
   occ <- unique(occ_raw)
   message("Number of unique presence records: ", nrow(occ))
 
-  ############# 3. Generate environmentally weighted pseudo-absences (eDist) and merge #############
-  message("Generating pseudo-absences using sdm::background with method = 'eDist'...")
-  bg <- sdm::background(
-    x = env_stack,
-    n = nrow(occ)/pre_abs_ratio,
-    method = 'eDist',
-    sp = occ
-  )
-  bg_pts <- bg[, c("x", "y")]
+  ############# 3. Generate pseudo-absences #############
+  message("Generating pseudo-absences using method: ", abs_method)
+
+  if (abs_method == "eStrat") {
+    # ------------------------------------------------------------
+    # Stratified random in environmental space (eStrat)
+    # ------------------------------------------------------------
+    n_layers <- terra::nlyr(env_stack)
+    n_strata_per_layer <- 3
+    classified_layers <- list()
+
+    for (i in 1:n_layers) {
+      layer <- env_stack[[i]]
+      rng <- terra::global(layer, fun = "range", na.rm = TRUE)
+      min_val <- rng[1, 1]
+      max_val <- rng[1, 2]
+
+      if (is.na(min_val) || is.na(max_val) || min_val == max_val) {
+        classified <- terra::ifel(!is.na(layer), 1, NA)
+      } else {
+        b1 <- min_val + (max_val - min_val) / 3
+        b2 <- min_val + 2 * (max_val - min_val) / 3
+        tiny <- (max_val - min_val) * 1e-9
+        cls_mat <- matrix(c(
+          min_val, b1, 1,
+          b1, b2, 2,
+          b2, max_val + tiny, 3
+        ), ncol = 3, byrow = TRUE)
+        classified <- terra::classify(layer, cls_mat, include.lowest = TRUE)
+      }
+
+      offset <- (i - 1) * n_strata_per_layer
+      classified <- classified + offset
+      classified_layers[[i]] <- classified
+    }
+
+    summed_layer <- classified_layers[[1]]
+    if (n_layers > 1) {
+      for (i in 2:n_layers) {
+        summed_layer <- summed_layer + classified_layers[[i]]
+      }
+    }
+
+    n_bg <- round(nrow(occ) / pre_abs_ratio)
+    sampled_points <- terra::spatSample(
+      summed_layer,
+      size = n_bg,
+      method = "stratified",
+      na.rm = TRUE,
+      as.points = FALSE
+    )
+    bg_pts <- sampled_points[, 1:2]
+    colnames(bg_pts) <- c("x", "y")
+
+    if (nrow(bg_pts) < n_bg) {
+      warning(sprintf("Only %d pseudo-absences could be sampled (requested %d). Some strata had insufficient cells.",
+                      nrow(bg_pts), n_bg))
+    }
+    message(sprintf("Generated %d pseudo-absences using eStrat method.", nrow(bg_pts)))
+
+  } else if (abs_method == "eUinf") {
+    # ------------------------------------------------------------
+    # Uniform sampling in environmental space via USE::paSampling
+    # Reference: Da Re et al. (2023) Methods in Ecology and Evolution
+    # ------------------------------------------------------------
+    if (!requireNamespace("USE", quietly = TRUE)) {
+      stop("Package 'USE' is required for abs_method = 'eUinf'. Please install it from GitHub: devtools::install_github('danddr/USE')")
+    }
+
+    # Convert presences to sf object as required by USE::paSampling
+    occ_sf <- sf::st_as_sf(occ, coords = c("x", "y"), crs = terra::crs(env_stack))
+
+    n_bg <- round(nrow(occ) / pre_abs_ratio)
+
+    # paSampling requires a grid resolution (grid.res). If not known,
+    # a reasonable default can be used; users may also pre-compute it
+    # via USE::optimRes. Here we set a moderate default of 30.
+    message("Running USE::paSampling with uniform environmental sampling...")
+    pa_result <- USE::paSampling(
+      env.rast   = env_stack,
+      pres       = occ_sf,
+      thres      = 0.75,       # default kernel density threshold
+      grid.res   = 30,         # default resolution; adjust via optimRes if needed
+      n.tr       = n_bg,       # number of pseudo-absences per grid cell
+      plot_proc  = FALSE,
+      verbose    = FALSE
+    )
+
+    # pa_result is an sf object with coordinates in both geographical and environmental space
+    bg_coords <- sf::st_coordinates(pa_result)
+    bg_pts <- as.data.frame(bg_coords)
+    colnames(bg_pts) <- c("x", "y")
+
+    # If more points than needed are returned, randomly subsample to n_bg
+    if (nrow(bg_pts) > n_bg) {
+      set.seed(seed)
+      bg_pts <- bg_pts[sample(1:nrow(bg_pts), n_bg), ]
+    }
+
+    if (nrow(bg_pts) < n_bg) {
+      warning(sprintf("Only %d pseudo-absences were returned by paSampling (requested %d).", nrow(bg_pts), n_bg))
+    }
+    message(sprintf("Generated %d pseudo-absences using eUinf (uniform environmental) method.", nrow(bg_pts)))
+
+  } else if (abs_method %in% c("gRandom", "eRandom", "gDist", "eDist")) {
+    # Use sdm::background for the four existing methods
+    message("Using sdm::background with method = '", abs_method, "'...")
+    bg <- sdm::background(
+      x = env_stack,
+      n = nrow(occ) / pre_abs_ratio,
+      method = abs_method,
+      sp = occ
+    )
+    bg_pts <- bg[, c("x", "y")]
+    message(sprintf("Generated %d pseudo-absences using sdm::background.", nrow(bg_pts)))
+
+  } else {
+    stop("Unknown abs_method. Choose from 'gRandom', 'eRandom', 'gDist', 'eDist', 'eStrat', or 'eUinf'.")
+  }
+
+  # Merge presence and pseudo-absence points
   bg_pts$pr_ab <- 0
   occ_df <- occ[, c("x", "y")]
   occ_df$pr_ab <- 1
@@ -391,7 +509,6 @@ TB_sdm <- function(env_path,
     test_data <- test_data[complete_test, , drop = FALSE]  # remove na rows
     if (nrow(test_data) == 0) next
 
-
     fold_model <- suppressWarnings(sdm::sdm(
       formula = pr_ab ~ .,
       data = train_sdmdata,
@@ -489,9 +606,9 @@ TB_sdm <- function(env_path,
                      overwrite = TRUE, NAflag = -9999, filetype = "AAIGrid")
 
   best_threshold <- suppressWarnings(sdm::threshold(final_model,
-                                   id = 'ensemble',
-                                   setting = ens_setting,
-                                   opt = 2))
+                                                    id = 'ensemble',
+                                                    setting = ens_setting,
+                                                    opt = 2))
   cat("Best threshold based on MAX_TSS method =",best_threshold,"\n")
   binary_raster <- ensemble_raster >= best_threshold
   binary_raster <- terra::app(binary_raster, fun = function(x) as.integer(x))
@@ -499,7 +616,7 @@ TB_sdm <- function(env_path,
 
   names(binary_raster) <- "Presence_SUP_MAXTSS"
 
-    terra::writeRaster(binary_raster,
+  terra::writeRaster(binary_raster,
                      filename = file.path(res_path, "predicted_presence.asc"),
                      overwrite = TRUE, NAflag = -9999, filetype = "AAIGrid")
 

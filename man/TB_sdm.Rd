@@ -12,6 +12,7 @@ TB_sdm(
   x,
   y,
   pre_abs_ratio = 1,
+  abs_method = "eDist",
   collinearity_thresh = 0.7,
   remove_collinear = FALSE,
   block_size = NULL,
@@ -42,6 +43,11 @@ TB_sdm(
 \item{y}{character. Column name for latitude.}
 
 \item{pre_abs_ratio}{numeric. Ratio of presences to pseudo-absences points.}
+
+\item{abs_method}{character. Method for background generation. Options are:
+\code{"gRandom"}, \code{"eRandom"}, \code{"gDist"}, \code{"eDist"} (see \code{sdm::background},  Naimi & Araújo, 2016),
+\code{"eStrat"} (stratified random in environmental space, Steen et al., 2024),
+or \code{"eUinf"} (uniform sampling in environmental space via \code{USE::paSampling}, Da Re et al., 2023).}
 
 \item{collinearity_thresh}{numeric. Correlation threshold.}
 
@@ -101,6 +107,7 @@ sdm_q1 <- TB_sdm(
   x = "x",
   y = "y",
   pre_abs_ratio = 1,
+  abs_method = "eUinf", # uniform sampling in environmental space
   collinearity_thresh = 0.7,
   remove_collinear = TRUE,
   block_size = 500000,
